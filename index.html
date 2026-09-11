@@ -50,7 +50,7 @@
   - All asset contexts are isolated: their tick buffers, state, cooldown and history are independent.
 */
 
-const WS_URL = "wss://ws.binaryws.com/websockets/v3";
+const WS_URL = "wss://api.derivws.com/trading/v1/options/ws/public";
 const MAX_TICKS = 300;
 const MIN_TICKS = 80;
 const SIGNAL_THRESHOLD = 75;
@@ -253,13 +253,15 @@ function connect(){
   setConn(false,"Connexion…");
   ws=new WebSocket(WS_URL);
   ws.onopen=()=>{
+    log("WebSocket OPEN — endpoint public Deriv V1.");
     running=true;setConn(true,"Connecté à Deriv");
     log("WebSocket connecté.");
     send({active_symbols:"brief"});
   };
-  ws.onclose=()=>{setConn(false,"Déconnecté");for(const c of assets.values())c.status="OFFLINE";render();};
-  ws.onerror=()=>{log("Erreur WebSocket.");setConn(false,"Erreur");};
+  ws.onclose=(ev)=>{log(`WebSocket CLOSED — code=${ev.code} reason=${ev.reason||"(aucune raison)"} clean=${ev.wasClean}`);setConn(false,"Déconnecté");for(const c of assets.values())c.status="OFFLINE";render();};
+  ws.onerror=(ev)=>{log(`WebSocket ERROR — type=${ev.type||"error"}. Ouvre F12 > Console si nécessaire.`);setConn(false,"Erreur");};
   ws.onmessage=(ev)=>{
+    log("Réponse Deriv reçue.");
     let d;try{d=JSON.parse(ev.data)}catch{return}
     if(d.error){log(`API error: ${d.error.message||"inconnue"}`);return}
     if(d.msg_type==="active_symbols"){
