@@ -18,12 +18,13 @@
     .section{margin-top:18px}.section h2{font-size:15px;margin:0 0 10px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:9px 10px;border-bottom:1px solid #1a2d43;text-align:left;font-size:11px;white-space:nowrap}th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;background:#0a1727;position:sticky;top:0}tr:last-child td{border-bottom:0}.badge{display:inline-block;padding:4px 7px;border-radius:999px;border:1px solid var(--line);font-size:10px}.badge.call{color:var(--green);border-color:#1f7d53;background:#0d3b28}.badge.put{color:var(--red);border-color:#81313c;background:#421820}.badge.none{color:var(--muted)}.rec{font-weight:700}.rec.best{color:var(--green)}.rec.wait{color:var(--yellow)}.muted{color:var(--muted)}
     .hero{background:linear-gradient(135deg,#0e2036,#0b1727);border:1px solid #294767;border-radius:14px;padding:15px;margin-top:18px;box-shadow:0 12px 28px #0003}.hero-title{font-size:13px;color:var(--muted);margin-bottom:7px}.hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}.hero-item{background:#0b1a2c;border:1px solid #1e3853;border-radius:10px;padding:10px}.hero-item small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.hero-item b{font-size:14px}.oktxt{color:var(--green)}.warntxt{color:var(--yellow)}.danger{color:var(--red)}.tiny{font-size:10px}.table-note{padding:9px 10px;color:var(--muted);font-size:10px;border-top:1px solid #1a2d43}.matrix td,.matrix th{text-align:center}.matrix td:first-child,.matrix th:first-child{text-align:left}.matrix .bestcell{outline:1px solid #25d17d66;background:#0d3b2833}.matrix .lowcell{opacity:.65}.kpi{font-size:10px;color:var(--muted)}
     .focus-panel{margin-top:18px;border:1px solid #2f7d58;background:linear-gradient(135deg,#0b2a1d,#0b1727);border-radius:14px;padding:15px}.focus-title{font-size:14px;font-weight:800;margin-bottom:8px}.focus-sub{font-size:10px;color:var(--muted);margin-bottom:12px}.focus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.focus-card{background:#0b1a2c;border:1px solid #24553f;border-radius:10px;padding:12px}.focus-card.primary{outline:2px solid #25d17d66}.focus-row{display:flex;justify-content:space-between;gap:8px;align-items:center}.focus-tag{font-size:10px;font-weight:800;padding:4px 7px;border-radius:999px;border:1px solid #2f7d58;color:var(--green);background:#0d3b28}.focus-tag.limited{color:var(--yellow);border-color:#806a29;background:#382f12}.focus-tag.observe{color:var(--muted);border-color:var(--line);background:#101f33}.focus-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:10px}.focus-metric{background:#0d2033;border:1px solid #1a2d43;border-radius:8px;padding:7px}.focus-metric small{display:block;color:var(--muted);font-size:9px}.focus-metric b{font-size:12px}.focus-empty{padding:14px;border:1px dashed #2a4561;border-radius:10px;color:var(--muted)}
+    .demo-panel{margin-top:18px;border:1px solid #4b6b8b;background:linear-gradient(135deg,#10263d,#0b1727);border-radius:14px;padding:15px}.demo-title{font-size:14px;font-weight:800;margin-bottom:6px}.demo-sub{font-size:10px;color:var(--muted);margin-bottom:12px}.demo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px}.demo-input{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:#081522;color:var(--txt);outline:none}.demo-input:focus{border-color:#3d77aa}.demo-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.demo-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}.demo-box{background:#0b1a2c;border:1px solid #1e3853;border-radius:9px;padding:8px}.demo-box small{display:block;color:var(--muted);font-size:9px;margin-bottom:3px}.demo-box b{font-size:12px}.demo-lock{margin-top:9px;padding:8px 10px;border:1px dashed #496987;border-radius:8px;color:#b8cbe0;font-size:10px}.demo-table{min-width:1050px}
     @media(max-width:650px){header{align-items:flex-start}.metrics{grid-template-columns:repeat(2,1fr)}main{padding:10px}.card{min-height:0}}
   </style>
 </head>
 <body>
 <header>
-  <div><h1>Deriv Signal Terminal</h1><div class="sub">Multi-actifs · tick-by-tick · signaux manuels CALL / PUT · aucune exécution automatique</div></div>
+  <div><h1>Deriv Signal Terminal</h1><div class="sub">Multi-actifs · tick-by-tick · signaux manuels CALL / PUT · AUTO-DÉMO sécurisé à 0,5% du capital</div></div>
   <div class="status"><span id="dot" class="dot"></span><span id="connection">Déconnecté</span></div>
 </header>
 <main>
@@ -33,6 +34,30 @@
     <button class="btn" id="refresh">↻ Recharger les actifs</button>
     <button class="btn warn" id="clear">Effacer l'historique local</button>
   </div>
+
+  <section class="demo-panel">
+    <div class="demo-title">🧪 AUTO-DÉMO — exécution réelle uniquement sur le compte démo</div>
+    <div class="demo-sub">Mise fixe à 0,5% du solde au moment du signal. Le token reste uniquement en mémoire dans cette page et n’est jamais enregistré dans localStorage.</div>
+    <div class="demo-grid">
+      <input class="demo-input" id="demoAccountId" placeholder="ID compte démo" autocomplete="off">
+      <input class="demo-input" id="demoAppId" placeholder="Deriv App ID" autocomplete="off">
+      <input class="demo-input" id="demoToken" type="password" placeholder="Personal Access Token (PAT)" autocomplete="off">
+    </div>
+    <div class="demo-actions">
+      <button class="btn" id="demoConnect">🔐 Connecter le compte démo</button>
+      <button class="btn" id="demoDisconnect" disabled>Déconnecter démo</button>
+      <button class="btn primary" id="demoAuto" disabled>⏸ AUTO-DÉMO désactivé</button>
+      <button class="btn warn" id="demoStop">🛑 STOP AUTO-DÉMO</button>
+    </div>
+    <div class="demo-status">
+      <div class="demo-box"><small>État compte</small><b id="demoConn">NON CONNECTÉ</b></div>
+      <div class="demo-box"><small>Solde démo</small><b id="demoBalance">—</b></div>
+      <div class="demo-box"><small>Mise 0,5%</small><b id="demoStake">—</b></div>
+      <div class="demo-box"><small>Contrats ouverts</small><b id="demoOpenCount">0</b></div>
+      <div class="demo-box"><small>Auto-démo</small><b id="demoAutoState">ARRÊTÉ</b></div>
+    </div>
+    <div class="demo-lock">🔒 VERROU DÉMO : la connexion d’exécution n’accepte que l’URL WebSocket Deriv contenant <b>/ws/demo</b>. Une URL réelle est refusée automatiquement.</div>
+  </section>
   <div class="stats">
     <div class="stat"><small>Meilleure recommandation</small><b id="bestSummary">—</b></div>
     <div class="stat"><small>Actifs suivis</small><b id="nAssets">0</b></div>
@@ -76,6 +101,12 @@
     </tr></thead><tbody id="expiryTable"><tr><td colspan="6" class="muted">Pas encore assez de résultats.</td></tr></tbody></table></div>
   </section>
   <section class="section">
+    <h2>🤖 Opérations AUTO-DÉMO</h2>
+    <div class="table-wrap"><table class="demo-table"><thead><tr>
+      <th>#</th><th>Heure</th><th>Actif</th><th>Signal</th><th>Score</th><th>Expiration</th><th>Mise</th><th>Contrat</th><th>Statut</th><th>Résultat</th><th>Profit/Perte</th>
+    </tr></thead><tbody id="demoTradeTable"><tr><td colspan="11" class="muted">Aucune opération AUTO-DÉMO.</td></tr></tbody></table></div>
+  </section>
+  <section class="section">
     <h2>🏆 Meilleurs actifs actuellement — avec démarcation FOCUS</h2>
     <div class="table-wrap"><table><thead><tr>
       <th>Rang</th><th>Actif</th><th>Direction</th><th>Score</th><th>Expiration recommandée</th><th>Win rate historique</th><th>Confiance</th><th>Focus</th><th>Base</th>
@@ -89,7 +120,7 @@
 
 /*
   IMPORTANT:
-  - Market-data only. No login, no orders, no buy/sell API.
+  - Public market-data only by default. AUTO-DÉMO uses a separate authenticated /ws/demo connection and never the real endpoint.
   - The signal engine is a heuristic scoring system, not a profit guarantee.
   - All asset contexts are isolated: their tick buffers, state, cooldown and history are independent.
 */
@@ -110,6 +141,14 @@ const FOCUS_MIN_WINRATE = 62;
 const FOCUS_MIN_LOWER = 55;
 const MAX_FOCUS = 5;
 const MAX_RECOMMENDATIONS = 8;
+const DEMO_STAKE_PCT = 0.005;
+const DEMO_MIN_SCORE = 85;
+const DEMO_MAX_CONCURRENT = 3;
+const DEMO_API_BASE = "https://api.derivws.com";
+let demoWs = null, demoToken = "", demoAppId = "", demoAccountId = "", demoConnected = false, demoAuto = false, demoReqId = 50000;
+let demoBalanceValue = null, demoCurrency = "—";
+const demoTrades = JSON.parse(localStorage.getItem("deriv_demo_trades") || "[]");
+const demoByReq = new Map(), demoByContract = new Map();
 
 let ws = null, running = false, reqId = 0;
 const assets = new Map();
@@ -321,6 +360,86 @@ function makeContext(s){
     pip:s.pip_size||null,ticks:[],lastEpoch:0,cooldown:0,signal:null,pending:[],status:"CONNECTING",meta:s};
 }
 
+function demoSend(obj){
+  if(!demoWs || demoWs.readyState!==WebSocket.OPEN) return null;
+  const req_id=++demoReqId;
+  demoWs.send(JSON.stringify({...obj,req_id}));
+  return req_id;
+}
+function setDemoConn(text, ok=false){
+  $("demoConn").textContent=text;
+  $("demoConn").className=ok?"oktxt":(text.includes("ERREUR")?"danger":"warntxt");
+}
+function countOpenDemo(){ return demoTrades.filter(t=>t.status==="OPEN").length; }
+function saveDemoTrades(){ localStorage.setItem("deriv_demo_trades",JSON.stringify(demoTrades.slice(-1000))); }
+function renderDemoTrades(){
+  const rows=demoTrades.slice().reverse().slice(0,50);
+  $("demoTradeTable").innerHTML=rows.length?rows.map((t,i)=>{
+    const stat=t.result? t.result : (t.status||"—");
+    const cls=t.result==="WIN"?"oktxt":t.result==="LOSS"?"danger":"warntxt";
+    const pnl=Number.isFinite(t.profit)?t.profit.toFixed(2)+(t.currency?` ${t.currency}`:""):"—";
+    return `<tr><td>${i+1}</td><td>${new Date(t.createdAt||Date.now()).toLocaleTimeString()}</td><td><b>${t.asset}</b></td><td><span class="badge ${t.dir.toLowerCase()}">${t.dir}</span></td><td>${t.score}/100</td><td>${t.expiry} ticks</td><td>${Number(t.stake).toFixed(2)} ${t.currency||demoCurrency}</td><td>${t.contractId||"—"}</td><td class="${cls}">${stat}</td><td class="${cls}">${t.result||"EN COURS"}</td><td>${pnl}</td></tr>`;
+  }).join(""): '<tr><td colspan="11" class="muted">Aucune opération AUTO-DÉMO.</td></tr>';
+  $("demoOpenCount").textContent=countOpenDemo();
+  $("demoAutoState").textContent=demoAuto?"ACTIF":"ARRÊTÉ";
+}
+function autoDemoEligible(ctx,a){
+  if(!demoAuto || !demoConnected) return false;
+  if(!a || a.dir==="NONE" || !a.expiry || a.score<DEMO_MIN_SCORE) return false;
+  if(ctx.pending?.some(s=>s.createdEpoch===a.createdEpoch)) return false;
+  if(ctx.demoOpen) return false;
+  if(countOpenDemo()>=DEMO_MAX_CONCURRENT) return false;
+  if(!Number.isFinite(demoBalanceValue) || demoBalanceValue<=0) return false;
+  return true;
+}
+async function connectDemo(){
+  if(demoConnected) return;
+  demoToken=$("demoToken").value.trim(); demoAppId=$("demoAppId").value.trim(); demoAccountId=$("demoAccountId").value.trim();
+  if(!demoToken||!demoAccountId){log("AUTO-DÉMO: renseigne l’ID compte démo et le PAT.");return;}
+  try{
+    setDemoConn("AUTHENTIFICATION…");
+    const headers={"Authorization":`Bearer ${demoToken}`};
+    if(demoAppId) headers["Deriv-App-ID"]=demoAppId;
+    const res=await fetch(`${DEMO_API_BASE}/trading/v1/options/accounts/${encodeURIComponent(demoAccountId)}/otp`,{method:"POST",headers});
+    const body=await res.json();
+    const url=body?.data?.url;
+    if(!res.ok||!url) throw new Error(body?.errors?.[0]?.message||body?.error?.message||`HTTP ${res.status}`);
+    if(!url.includes("/ws/demo")) throw new Error("VERROU DÉMO: l’OTP ne renvoie pas une URL /ws/demo. Connexion refusée.");
+    demoWs=new WebSocket(url);
+    demoWs.onopen=()=>{
+      demoConnected=true;setDemoConn("CONNECTÉ DÉMO",true);$("demoDisconnect").disabled=false;$("demoAuto").disabled=false;$("demoAuto").textContent="▶ Activer AUTO-DÉMO";log("AUTO-DÉMO: WebSocket /ws/demo connecté.");
+      demoSend({balance:1,subscribe:1});
+    };
+    demoWs.onclose=(ev)=>{demoConnected=false;demoAuto=false;$("demoDisconnect").disabled=true;$("demoAuto").disabled=true;$("demoAuto").textContent="⏸ AUTO-DÉMO désactivé";setDemoConn("DÉCONNECTÉ");log(`AUTO-DÉMO: déconnexion code=${ev.code} reason=${ev.reason||"(aucune)"}`);renderDemoTrades();};
+    demoWs.onerror=()=>{setDemoConn("ERREUR",false);log("AUTO-DÉMO: erreur WebSocket démo.");};
+    demoWs.onmessage=(ev)=>{
+      let d;try{d=JSON.parse(ev.data)}catch{return}
+      if(d.error){log(`AUTO-DÉMO API error: ${d.error.message||"inconnue"}`);return;}
+      if(d.msg_type==="balance"){
+        demoBalanceValue=Number(d.balance?.balance); demoCurrency=d.balance?.currency||"—"; $("demoBalance").textContent=Number.isFinite(demoBalanceValue)?`${demoBalanceValue.toFixed(2)} ${demoCurrency}`:"—"; $("demoStake").textContent=Number.isFinite(demoBalanceValue)?`${(demoBalanceValue*DEMO_STAKE_PCT).toFixed(2)} ${demoCurrency}`:"—";
+      }
+      if(d.msg_type==="proposal"){
+        const meta=demoByReq.get(d.echo_req?.req_id); if(meta){demoByReq.delete(d.echo_req.req_id); const ask=Number(d.proposal?.ask_price); const id=d.proposal?.id; if(!id||!Number.isFinite(ask)){log(`AUTO-DÉMO ${meta.asset}: proposition invalide.`);return;} if(ask>meta.stake){log(`AUTO-DÉMO ${meta.asset}: mise proposée ${ask} > plafond ${meta.stake.toFixed(2)}. Achat refusé.`);return;} const buyReq=demoSend({buy:id,price:ask}); demoByReq.set(buyReq,{...meta,proposalId:id,ask}); log(`AUTO-DÉMO ${meta.asset}: proposition OK · ${meta.dir} ${meta.expiry}t · ${ask.toFixed(2)} ${demoCurrency}`); }}
+      if(d.msg_type==="buy"){
+        const meta=demoByReq.get(d.echo_req?.req_id); const b=d.buy; if(!b)return; const trade={...meta,contractId:b.contract_id,stake:Number(b.buy_price||meta.stake),purchaseTime:b.purchase_time||Math.floor(Date.now()/1000),status:"OPEN",result:null,profit:null,currency:demoCurrency,createdAt:Date.now(),exit:null}; demoByReq.delete(d.echo_req.req_id); demoTrades.push(trade); demoByContract.set(String(b.contract_id),trade); const ctx=assets.get(meta.asset);if(ctx)ctx.demoOpen=true; saveDemoTrades(); renderDemoTrades(); log(`AUTO-DÉMO ${meta.asset}: CONTRAT ACHETÉ #${b.contract_id}`); demoSend({proposal_open_contract:1,contract_id:b.contract_id,subscribe:1}); }
+      if(d.msg_type==="proposal_open_contract"){
+        const c=d.proposal_open_contract; const trade=demoByContract.get(String(c?.contract_id)); if(!trade)return; const status=String(c.status||"").toLowerCase(); const done=(c.is_sold===1||["won","lost","sold","expired"].includes(status)); if(done){trade.status="CLOSED";trade.result=status==="won"||Number(c.profit)>0?"WIN":status==="lost"||Number(c.profit)<0?"LOSS":"VOID";trade.profit=Number(c.profit);trade.exit=Number(c.exit_spot);trade.exitTime=c.exit_spot_time||Date.now()/1000; const ctx=assets.get(trade.asset);if(ctx)ctx.demoOpen=false; demoByContract.delete(String(c.contract_id)); saveDemoTrades(); renderDemoTrades(); log(`AUTO-DÉMO ${trade.asset}: #${trade.contractId} → ${trade.result} · ${Number.isFinite(trade.profit)?trade.profit.toFixed(2):"—"} ${trade.currency}`); }
+      }
+    };
+  }catch(err){demoConnected=false;setDemoConn("ERREUR",false);log(`AUTO-DÉMO: ${err.message}`);}
+}
+function disconnectDemo(){ demoAuto=false; if(demoWs){try{demoWs.close()}catch{}} demoWs=null; demoConnected=false; demoToken=""; setDemoConn("NON CONNECTÉ"); $("demoAuto").disabled=true; $("demoDisconnect").disabled=true; $("demoAuto").textContent="⏸ AUTO-DÉMO désactivé"; }
+function toggleDemoAuto(){ if(!demoConnected){log("AUTO-DÉMO: connecte d’abord le compte démo.");return;} demoAuto=!demoAuto; $("demoAuto").textContent=demoAuto?"⏸ Désactiver AUTO-DÉMO":"▶ Activer AUTO-DÉMO"; renderDemoTrades(); log(demoAuto?"AUTO-DÉMO ACTIVÉ — plafond 0,5% du solde, max 3 contrats.":"AUTO-DÉMO DÉSACTIVÉ."); }
+function stopDemoAuto(){demoAuto=false;$("demoAuto").textContent="▶ Activer AUTO-DÉMO";renderDemoTrades();log("STOP AUTO-DÉMO: aucune nouvelle opération ne sera lancée.");}
+async function requestDemoTrade(ctx,sig){
+  const stake=Math.max(0,demoBalanceValue*DEMO_STAKE_PCT);
+  if(!Number.isFinite(stake)||stake<=0) return;
+  const req=demoSend({proposal:1,amount:stake,basis:"stake",contract_type:sig.dir,currency:demoCurrency,duration_unit:"t",duration:sig.expiry,underlying_symbol:ctx.symbol});
+  if(!req)return;
+  const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,createdAt:Date.now()};
+  demoByReq.set(req,meta);log(`AUTO-DÉMO ${ctx.symbol}: demande proposition ${sig.dir} ${sig.expiry} ticks · mise ${stake.toFixed(2)} ${demoCurrency}`);
+}
+
 function statsFor(filter){
   const rows=outcomes.filter(filter);
   const wins=rows.filter(x=>x.result==="WIN").length;
@@ -362,6 +481,7 @@ function addTick(ctx, q, epoch){
       ctx.pending.push(sig);
       ctx.cooldown=COOLDOWN_TICKS;
       log(`SIGNAL ${ctx.symbol}: ${a.dir} ${a.score}/100 · expiration ${a.expiry} ticks`);
+      if(autoDemoEligible(ctx,a)){ requestDemoTrade(ctx,sig); }
     }
   }
   ctx.analysis=a;
@@ -576,8 +696,13 @@ $("start").onclick=()=>{ $("start").disabled=true;$("stop").disabled=false; conn
 $("stop").onclick=()=>{running=false;if(ws)ws.close();$("start").disabled=false;$("stop").disabled=true;};
 $("refresh").onclick=()=>{if(ws&&ws.readyState===WebSocket.OPEN)send({active_symbols:"brief"});else connect();};
 $("clear").onclick=()=>{if(confirm("Effacer les résultats WIN/LOSS locaux ?")){outcomes.length=0;localStorage.removeItem("deriv_signal_outcomes");for(const c of assets.values()){c.pending=[];c.signal=null}render();log("Historique local effacé.");}};
+$("demoConnect").onclick=connectDemo;
+$("demoDisconnect").onclick=disconnectDemo;
+$("demoAuto").onclick=toggleDemoAuto;
+$("demoStop").onclick=stopDemoAuto;
 
 render();
+renderDemoTrades();
 </script>
 </body>
 </html>
