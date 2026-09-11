@@ -14,6 +14,9 @@
     .price{font-size:22px;font-weight:750;margin:15px 0}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.m{background:var(--panel2);border:1px solid #1a2d43;border-radius:8px;padding:7px}.m span{display:block;color:var(--muted);font-size:10px}.m b{font-size:12px}.score{margin-top:11px;height:8px;background:#17283b;border-radius:99px;overflow:hidden}.score>i{display:block;height:100%;background:linear-gradient(90deg,var(--yellow),var(--green));width:0}.reason{font-size:11px;color:#b6c6d8;margin-top:9px;line-height:1.45}.footer{display:flex;justify-content:space-between;gap:10px;margin-top:12px;font-size:11px;color:var(--muted)}
     .empty{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.log{margin-top:16px;background:#06101b;border:1px solid var(--line);border-radius:12px;padding:12px;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:180px;overflow:auto;color:#a9bfd6}
     .stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}.stat small{display:block;color:var(--muted);font-size:10px}.stat b{font-size:16px}
+
+    .section{margin-top:18px}.section h2{font-size:15px;margin:0 0 10px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:9px 10px;border-bottom:1px solid #1a2d43;text-align:left;font-size:11px;white-space:nowrap}th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;background:#0a1727;position:sticky;top:0}tr:last-child td{border-bottom:0}.badge{display:inline-block;padding:4px 7px;border-radius:999px;border:1px solid var(--line);font-size:10px}.badge.call{color:var(--green);border-color:#1f7d53;background:#0d3b28}.badge.put{color:var(--red);border-color:#81313c;background:#421820}.badge.none{color:var(--muted)}.rec{font-weight:700}.rec.best{color:var(--green)}.rec.wait{color:var(--yellow)}.muted{color:var(--muted)}
+    .hero{background:linear-gradient(135deg,#0e2036,#0b1727);border:1px solid #294767;border-radius:14px;padding:15px;margin-top:18px;box-shadow:0 12px 28px #0003}.hero-title{font-size:13px;color:var(--muted);margin-bottom:7px}.hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}.hero-item{background:#0b1a2c;border:1px solid #1e3853;border-radius:10px;padding:10px}.hero-item small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}.hero-item b{font-size:14px}.oktxt{color:var(--green)}.warntxt{color:var(--yellow)}.danger{color:var(--red)}.tiny{font-size:10px}.table-note{padding:9px 10px;color:var(--muted);font-size:10px;border-top:1px solid #1a2d43}.matrix td,.matrix th{text-align:center}.matrix td:first-child,.matrix th:first-child{text-align:left}.matrix .bestcell{outline:1px solid #25d17d66;background:#0d3b2833}.matrix .lowcell{opacity:.65}.kpi{font-size:10px;color:var(--muted)}
     @media(max-width:650px){header{align-items:flex-start}.metrics{grid-template-columns:repeat(2,1fr)}main{padding:10px}.card{min-height:0}}
   </style>
 </head>
@@ -30,6 +33,7 @@
     <button class="btn warn" id="clear">Effacer l'historique local</button>
   </div>
   <div class="stats">
+    <div class="stat"><small>Meilleure recommandation</small><b id="bestSummary">—</b></div>
     <div class="stat"><small>Actifs suivis</small><b id="nAssets">0</b></div>
     <div class="stat"><small>Signaux actifs</small><b id="nSignals">0</b></div>
     <div class="stat"><small>WIN</small><b id="wins">0</b></div>
@@ -37,6 +41,39 @@
     <div class="stat"><small>Taux observé</small><b id="wr">—</b></div>
   </div>
   <div id="cards" class="grid"><div class="empty">Clique sur « Démarrer le scanner ».</div></div>
+
+  <section class="hero" id="decisionHero">
+    <div class="hero-title">🧠 SÉLECTEUR D’OPPORTUNITÉ — technique + historique + échantillon + expiration + régime</div>
+    <div id="heroContent" class="hero-grid"><div class="hero-item"><small>État</small><b class="warntxt">En attente de données</b></div></div>
+  </section>
+
+  <section class="section">
+    <h2>📈 Matrice de performance des expirations</h2>
+    <div class="table-wrap"><table class="matrix"><thead><tr><th>Actif / direction</th><th>2t</th><th>3t</th><th>4t</th><th>5t</th><th>6t</th><th>7t</th><th>8t</th><th>9t</th><th>10t</th><th>Meilleure</th></tr></thead><tbody id="matrixTable"><tr><td colspan="11" class="muted">Accumulation des résultats en cours…</td></tr></tbody></table><div class="table-note">Chaque cellule affiche <b>win rate (échantillon)</b>. Une expiration n’est considérée comme statistiquement exploitable qu’à partir du seuil d’échantillon configuré.</div></div>
+  </section>
+
+  <section class="section">
+    <h2>📊 Signaux & recommandations</h2>
+    <div class="table-wrap"><table><thead><tr>
+      <th>#</th><th>Actif</th><th>Signal</th><th>Score</th><th>Expiration</th><th>Win rate actif</th><th>Win rate setup</th><th>Échantillon</th><th>Confiance</th><th>Recommandation</th>
+    </tr></thead><tbody id="signalTable"><tr><td colspan="10" class="muted">En attente de signaux…</td></tr></tbody></table></div>
+  </section>
+  <section class="section" id="bestOpportunitySection">
+    <h2>🎯 Meilleure opportunité actuelle</h2>
+    <div id="bestOpportunity" class="table-wrap"><div style="padding:14px" class="muted">En attente d'un signal exploitable…</div></div>
+  </section>
+  <section class="section">
+    <h2>⏱️ Expirations les plus performantes</h2>
+    <div class="table-wrap"><table><thead><tr>
+      <th>Actif</th><th>Direction</th><th>Expiration</th><th>Win rate</th><th>Échantillon</th><th>Statut</th>
+    </tr></thead><tbody id="expiryTable"><tr><td colspan="6" class="muted">Pas encore assez de résultats.</td></tr></tbody></table></div>
+  </section>
+  <section class="section">
+    <h2>🏆 Meilleurs actifs actuellement</h2>
+    <div class="table-wrap"><table><thead><tr>
+      <th>Rang</th><th>Actif</th><th>Direction</th><th>Score</th><th>Expiration recommandée</th><th>Win rate historique</th><th>Confiance</th><th>Base</th>
+    </tr></thead><tbody id="recommendTable"><tr><td colspan="7" class="muted">Pas encore assez de données.</td></tr></tbody></table></div>
+  </section>
   <div class="log" id="log"></div>
 </main>
 
@@ -57,6 +94,10 @@ const SIGNAL_THRESHOLD = 75;
 const STRONG_THRESHOLD = 85;
 const COOLDOWN_TICKS = 8;
 const MAX_EXPIRY = 10;
+const MIN_SETUP_SAMPLE = 5;
+const MIN_RECOMMEND_SAMPLE = 15;
+const MIN_ASSET_SAMPLE = 15;
+const MAX_RECOMMENDATIONS = 8;
 
 let ws = null, running = false, reqId = 0;
 const assets = new Map();
@@ -131,6 +172,38 @@ function structure(values, look=12){
 }
 function fmt(x, d=5){ return x==null||!Number.isFinite(x)?"—":Number(x).toFixed(d); }
 
+function alignedState(values, mode){
+  if(values.length<3) return false;
+  const e9=ema(values,9), e21=ema(values,21), e50=ema(values,50);
+  if(e9==null||e21==null||e50==null) return false;
+  return mode==='CALL' ? e9>e21 && e21>e50 : e9<e21 && e21<e50;
+}
+function alignmentPersistence(values, mode, look=8){
+  if(values.length<50+look) return 0;
+  let ok=0;
+  for(let i=look;i>=1;i--){
+    const slice=values.slice(0,-i);
+    if(alignedState(slice,mode)) ok++;
+  }
+  return ok/look;
+}
+function directionalEfficiency(values, period=24){
+  if(values.length<period+1) return 0;
+  const part=values.slice(-period-1);
+  const net=Math.abs(part.at(-1)-part[0]);
+  let travel=0;
+  for(let i=1;i<part.length;i++) travel+=Math.abs(part[i]-part[i-1]);
+  return travel>0 ? net/travel : 0;
+}
+function rangeState(values, period=24){
+  if(values.length<period+1) return false;
+  const part=values.slice(-period);
+  const hi=Math.max(...part), lo=Math.min(...part);
+  const mv=meanAbsMove(values,20)||0;
+  const width=hi-lo;
+  const efficiency=directionalEfficiency(values,period);
+  return mv>0 && width <= mv*period*0.95 && efficiency < 0.28;
+}
 function analyze(ctx){
   const v=ctx.ticks.map(x=>x.q);
   if(v.length<MIN_TICKS) return {dir:"NONE",score:0,expiry:null,trend:"NEUTRAL",reason:`Initialisation: ${v.length}/${MIN_TICKS} ticks`};
@@ -138,67 +211,143 @@ function analyze(ctx){
   const e9=ema(v,9), e21=ema(v,21), e50=ema(v,50);
   const e21prev=ema(v.slice(0,-8),21), e50prev=ema(v.slice(0,-8),50);
   const rs=rsi(v,14), rr=roc(v,10), mv=meanAbsMove(v,20), ac=accel(v), st=structure(v,12);
-  const gap = e50 ? (e21-e50)/Math.max(mv||1e-12,1e-12) : 0;
-  const sl = e21prev==null?0:e21-e21prev;
-  let bull=0,bear=0,reasons=[];
-  if(e9>e21 && e21>e50){bull+=20; reasons.push("EMA alignées ↑")}
-  else if(e9<e21 && e21<e50){bear+=20; reasons.push("EMA alignées ↓")}
-  else {bull+=5;bear+=5}
-  if(sl>0){bull+=10;reasons.push("pente EMA21 ↑")} else if(sl<0){bear+=10;reasons.push("pente EMA21 ↓")}
-  if(rr>0.02){bull+=15;reasons.push("momentum +")} else if(rr<-0.02){bear+=15;reasons.push("momentum -")}
-  if(rs>55 && rs<75){bull+=10;reasons.push("RSI favorable")} else if(rs<45 && rs>25){bear+=10;reasons.push("RSI favorable")}
-  if(st>0){bull+=15;reasons.push("structure HH/HL")} else if(st<0){bear+=15;reasons.push("structure LH/LL")}
-  if(mv>0){ // volatility gate, not a direction vote
-    const normalized = Math.abs(rr||0)/(mv/Math.max(price,1e-12));
+  const safeMv=Math.max(mv||1e-12,1e-12);
+  const gap=(e21-e50)/safeMv;
+  const sl=e21prev==null?0:e21-e21prev;
+  const normSlope=sl/safeMv;
+  const priceDist=(price-e21)/safeMv;
+  const efficiency=directionalEfficiency(v,24);
+  const inRange=rangeState(v,24);
+  const persistCall=alignmentPersistence(v,'CALL',8);
+  const persistPut=alignmentPersistence(v,'PUT',8);
+  let bull=0,bear=0,reasons=[],penalty=0;
+
+  if(e9>e21 && e21>e50){bull+=18;reasons.push("EMA alignées ↑")} 
+  else if(e9<e21 && e21<e50){bear+=18;reasons.push("EMA alignées ↓")} 
+  else {bull+=4;bear+=4;reasons.push("EMA non alignées")}
+
+  if(normSlope>0.12){bull+=12;reasons.push("pente EMA21 forte ↑")}
+  else if(normSlope>0.035){bull+=8;reasons.push("pente EMA21 ↑")}
+  else if(normSlope<-0.12){bear+=12;reasons.push("pente EMA21 forte ↓")}
+  else if(normSlope<-0.035){bear+=8;reasons.push("pente EMA21 ↓")}
+  else {penalty+=2}
+
+  if(rr>0.05){bull+=15;reasons.push("momentum +")}
+  else if(rr>0.015){bull+=9;reasons.push("momentum positif")}
+  else if(rr<-0.05){bear+=15;reasons.push("momentum -")}
+  else if(rr<-0.015){bear+=9;reasons.push("momentum négatif")}
+
+  if(rs>54 && rs<74){bull+=8;reasons.push("RSI favorable")}
+  else if(rs<46 && rs>26){bear+=8;reasons.push("RSI favorable")}
+  else if((rs>=74 && bull>=bear) || (rs<=26 && bear>bull)){penalty+=4;reasons.push("RSI proche de l'épuisement")}
+
+  if(st>0){bull+=15;reasons.push("structure HH/HL")}
+  else if(st<0){bear+=15;reasons.push("structure LH/LL")}
+
+  if(mv>0){
+    const normalized=Math.abs(rr||0)/(mv/Math.max(price,1e-12));
     if(normalized>0.7){bull+=5;bear+=5;reasons.push("volatilité exploitable")}
+    else if(normalized<0.25){penalty+=2;reasons.push("volatilité faible")}
   }
+
   if(ac>0){bull+=10;reasons.push("accélération ↑")} else if(ac<0){bear+=10;reasons.push("accélération ↓")}
-  // Recent confirmation: direction consistent over last 5 ticks
+
   const diffs=v.slice(-6).slice(1).map((x,i)=>x-v.slice(-6)[i]);
   const pos=diffs.filter(x=>x>0).length, neg=diffs.filter(x=>x<0).length;
-  if(pos>=4){bull+=10;reasons.push("confirmation récente ↑")} else if(neg>=4){bear+=10;reasons.push("confirmation récente ↓")}
+  if(pos>=4){bull+=10;reasons.push("confirmation multi-ticks ↑")}
+  else if(neg>=4){bear+=10;reasons.push("confirmation multi-ticks ↓")}
+  else {penalty+=3;reasons.push("confirmation incomplète")}
 
-  let dir = bull>=bear ? "CALL" : "PUT";
-  let score = Math.min(100, Math.max(bull,bear));
-  const contradiction = Math.abs(bull-bear);
-  if(contradiction<12) {score=Math.min(score,64);dir="NONE";reasons.push("confluence insuffisante")}
-  if((dir==="CALL" && rs>78) || (dir==="PUT" && rs<22)){score=Math.min(score,69);dir="NONE";reasons.push("risque d'épuisement")}
+  const persistenceCall=persistCall>=0.625;
+  const persistencePut=persistPut>=0.625;
+  if(persistenceCall){bull+=7;reasons.push(`alignement persistant ${(persistCall*100).toFixed(0)}%`)}
+  if(persistencePut){bear+=7;reasons.push(`alignement persistant ${(persistPut*100).toFixed(0)}%`)}
+
+  const extendedCall=priceDist>2.5;
+  const extendedPut=priceDist<-2.5;
+  if(extendedCall){bull-=6;penalty+=4;reasons.push("entrée tardive ↑")}
+  if(extendedPut){bear-=6;penalty+=4;reasons.push("entrée tardive ↓")}
+
+  if(inRange){
+    penalty+=12;
+    reasons.push(`marché en range · efficacité ${(efficiency*100).toFixed(0)}%`);
+  }
+
+  const callBias=bull-bear;
+  let dir = callBias>=0 ? "CALL" : "PUT";
+  let score = Math.min(100, Math.max(0, Math.max(bull,bear)-penalty));
+  const contradiction=Math.abs(callBias);
+  if(contradiction<12){score=Math.min(score,64);dir="NONE";reasons.push("confluence insuffisante")}
+
+  const chosenPersist=dir==='CALL'?persistCall:persistPut;
+  if(dir!=="NONE" && chosenPersist<0.375){score=Math.min(score,69);dir="NONE";reasons.push("alignement trop instable")}
+  if(inRange){score=Math.min(score,69);dir="NONE";reasons.push("NO TRADE · range")}
+  if((dir==='CALL' && rs>78) || (dir==='PUT' && rs<22)){score=Math.min(score,69);dir="NONE";reasons.push("risque d'épuisement")}
   if(!Number.isFinite(score)){score=0;dir="NONE"}
 
   let trend="NEUTRAL";
   if(e21>e50 && price>e21) trend="HAUSSIÈRE";
-  if(e21<e50 && price<e21) trend="BAISSIÈRE";
+  else if(e21<e50 && price<e21) trend="BAISSIÈRE";
 
-  // Dynamic expiry: stronger momentum/acceleration => shorter expiry; weak/slow => longer.
-  const strength = Math.min(1, Math.abs(rr||0)/0.12 + Math.abs(ac||0)/(Math.max(mv||1e-12,1e-12)*2));
-  let expiry = Math.round(9 - strength*5);
+  const momentumStrength=Math.min(1,(Math.abs(rr||0)/0.12)+(Math.abs(normSlope)/0.35)+(Math.abs(ac)/(safeMv*2)));
+  const persistenceStrength=Math.min(1,chosenPersist);
+  const strength=Math.min(1,momentumStrength*0.7+persistenceStrength*0.3);
+  let expiry=Math.round(9-strength*5);
+  if(efficiency>0.55 && Math.abs(normSlope)>0.05) expiry=Math.min(expiry,5);
+  if(score>=90) expiry=Math.min(expiry,5);
   if(score>=85) expiry=Math.min(expiry,6);
   if(score<75) expiry=null;
-  expiry = expiry==null?null:Math.max(2,Math.min(MAX_EXPIRY,expiry));
+  expiry=expiry==null?null:Math.max(2,Math.min(MAX_EXPIRY,expiry));
 
   if(score<SIGNAL_THRESHOLD) dir="NONE";
-  const level = score>=STRONG_THRESHOLD?"STRONG":score>=SIGNAL_THRESHOLD?"SIGNAL":score>=65?"WATCH":"NO TRADE";
-  return {dir,score,expiry,trend,level,reason:reasons.slice(0,5).join(" · "),price,ema9:e9,ema21:e21,ema50:e50,rsi:rs,roc:rr,vol:mv,accel:ac};
+  const level=score>=STRONG_THRESHOLD?"STRONG":score>=SIGNAL_THRESHOLD?"SIGNAL":score>=65?"WATCH":"NO TRADE";
+  return {dir,score,expiry,trend,level,reason:reasons.slice(0,6).join(" · "),price,ema9:e9,ema21:e21,ema50:e50,rsi:rs,roc:rr,vol:mv,accel:ac,emaGap:gap,normSlope,priceDist,efficiency,range:inRange,persistCall,persistPut};
 }
 
 function makeContext(s){
   return {symbol:s.underlying_symbol,name:s.underlying_symbol_name||s.underlying_symbol,
-    pip:s.pip_size||null,ticks:[],lastEpoch:0,cooldown:0,signal:null,status:"CONNECTING",meta:s};
+    pip:s.pip_size||null,ticks:[],lastEpoch:0,cooldown:0,signal:null,pending:[],status:"CONNECTING",meta:s};
+}
+
+function statsFor(filter){
+  const rows=outcomes.filter(filter);
+  const wins=rows.filter(x=>x.result==="WIN").length;
+  const losses=rows.filter(x=>x.result==="LOSS").length;
+  return {wins,losses,n:wins+losses,wr:(wins+losses)?wins/(wins+losses)*100:null};
+}
+
+function settlePending(ctx){
+  if(!ctx.pending?.length) return;
+  const current=ctx.ticks.at(-1);
+  if(!current) return;
+  const remaining=[];
+  for(const sig of ctx.pending){
+    sig.ticksSeen=(sig.ticksSeen||0)+1;
+    if(sig.ticksSeen < sig.expiry){ remaining.push(sig); continue; }
+    const delta=current.q-sig.entry;
+    const result=delta===0?"VOID":(sig.dir==="CALL"?(delta>0?"WIN":"LOSS"):(delta<0?"WIN":"LOSS"));
+    outcomes.push({...sig,exit:current.q,exitEpoch:current.epoch,result,settledAt:Date.now()});
+    log(`RESULT ${ctx.symbol}: ${sig.dir} ${sig.expiry} ticks → ${result}`);
+  }
+  ctx.pending=remaining;
+  localStorage.setItem("deriv_signal_outcomes",JSON.stringify(outcomes.slice(-5000)));
 }
 
 function addTick(ctx, q, epoch){
-  if(ctx.lastEpoch===epoch) return; // duplicate protection
+  if(ctx.lastEpoch===epoch) return;
   if(!Number.isFinite(q)) return;
   ctx.lastEpoch=epoch;
   ctx.ticks.push({q,epoch});
   if(ctx.ticks.length>MAX_TICKS)ctx.ticks.shift();
   if(ctx.cooldown>0)ctx.cooldown--;
   const a=analyze(ctx);
-  // New signal only after cooldown and when score crosses threshold.
-  if(ctx.cooldown===0 && a.dir!=="NONE"){
+  settlePending(ctx);
+  if(ctx.cooldown===0 && a.dir!=="NONE" && a.expiry){
     const previous=ctx.signal;
     if(!previous || previous.dir!==a.dir || previous.score<SIGNAL_THRESHOLD){
-      ctx.signal={...a,createdEpoch:epoch,entry:q};
+      const sig={...a,createdEpoch:epoch,entry:q,ticksSeen:0,asset:ctx.symbol};
+      ctx.signal=sig;
+      ctx.pending.push(sig);
       ctx.cooldown=COOLDOWN_TICKS;
       log(`SIGNAL ${ctx.symbol}: ${a.dir} ${a.score}/100 · expiration ${a.expiry} ticks`);
     }
@@ -207,32 +356,127 @@ function addTick(ctx, q, epoch){
   render();
 }
 
+function wilsonLower(wins,n,z=1.96){
+  if(!n) return 0;
+  const p=wins/n, z2=z*z;
+  return ((p+z2/(2*n)-z*Math.sqrt((p*(1-p)+z2/(4*n))/n))/(1+z2/n))*100;
+}
+function smoothedWR(wins,n,prior=20){
+  return n?((wins+prior*0.5)/(n+prior))*100:50;
+}
+function bestExpiry(symbol, dir, fallback){
+  const candidates=[];
+  for(let e=2;e<=MAX_EXPIRY;e++){
+    const st=statsFor(x=>x.asset===symbol&&x.dir===dir&&x.expiry===e&&x.result!=='VOID');
+    if(st.n>=MIN_SETUP_SAMPLE){
+      candidates.push({expiry:e,wr:st.wr,n:st.n,wins:st.wins,losses:st.losses,lower:wilsonLower(st.wins,st.n),smoothed:smoothedWR(st.wins,st.n)});
+    }
+  }
+  // Prefer the statistically strongest expiration, not simply the raw highest WR.
+  candidates.sort((a,b)=>b.lower-a.lower || b.smoothed-a.smoothed || b.n-a.n || Math.abs(a.expiry-fallback)-Math.abs(b.expiry-fallback));
+  return candidates[0]||{expiry:fallback,wr:null,n:0,wins:0,losses:0,lower:null,smoothed:50};
+}
+function allExpiryStats(symbol,dir){
+  const out={};
+  for(let e=2;e<=MAX_EXPIRY;e++){
+    const st=statsFor(x=>x.asset===symbol&&x.dir===dir&&x.expiry===e&&x.result!=='VOID');
+    out[e]={...st,lower:wilsonLower(st.wins,st.n),smoothed:smoothedWR(st.wins,st.n)};
+  }
+  return out;
+}
+function assetStats(symbol){return statsFor(x=>x.asset===symbol&&x.result!=='VOID');}
+function setupStats(symbol,dir,expiry){return statsFor(x=>x.asset===symbol&&x.dir===dir&&x.expiry===expiry&&x.result!=='VOID');}
+function confidenceFor(assetN, setupN){
+  if(assetN>=MIN_ASSET_SAMPLE && setupN>=MIN_RECOMMEND_SAMPLE) return 'ÉLEVÉE';
+  if(setupN>=MIN_SETUP_SAMPLE) return 'LIMITÉE';
+  return 'INSUFFISANTE';
+}
+function recommendationFor(confidence, score, empirical, n, lower){
+  if(score<STRONG_THRESHOLD) return confidence==='ÉLEVÉE' && lower!=null && lower>=55 ? 'FAVORABLE' : confidence==='LIMITÉE' ? 'SURVEILLER' : 'PROVISOIRE';
+  if(confidence==='ÉLEVÉE') return empirical!=null && empirical>=60 && lower>=50 ? 'FAVORABLE' : 'PRUDENCE';
+  if(confidence==='LIMITÉE') return empirical!=null && empirical>=55 ? 'SURVEILLER' : 'PRUDENCE';
+  return 'PROVISOIRE';
+}
+function opportunityData(ctx){
+  const a=ctx.analysis;if(!a||a.dir==='NONE'||!a.expiry) return null;
+  const as=assetStats(ctx.symbol), ss=setupStats(ctx.symbol,a.dir,a.expiry), br=bestExpiry(ctx.symbol,a.dir,a.expiry);
+  const chosen=br.n>=MIN_SETUP_SAMPLE?br:{expiry:a.expiry,...ss};
+  const empirical=chosen.wr??null, n=chosen.n||0, lower=chosen.lower??(n?wilsonLower(chosen.wins,n):null);
+  const confidence=confidenceFor(as.n,n);
+  const rec=recommendationFor(confidence,a.score,empirical,n,lower);
+  const histScore=lower==null?50:lower;
+  const sampleFactor=Math.min(1,n/MIN_RECOMMEND_SAMPLE);
+  const statistical=50+(histScore-50)*sampleFactor;
+  // Ranking: current technical edge dominates; historical evidence can adjust it, but never invents evidence.
+  const rank=a.score*0.70 + statistical*0.30;
+  return {ctx,a,as,ss,br,chosen,empirical,n,lower,confidence,rec,rank};
+}
+function renderHero(candidates){
+  const validated=candidates.filter(x=>x.rec==='FAVORABLE'&&x.confidence==='ÉLEVÉE');
+  const best=validated[0]||candidates[0];
+  if(!best){
+    $('heroContent').innerHTML='<div class="hero-item"><small>Décision globale</small><b class="warntxt">NO TRADE — aucune opportunité technique</b></div>';
+    return;
+  }
+  const expiryNote=best.br.n>=MIN_SETUP_SAMPLE ? `${best.br.expiry} ticks · ${best.br.wr.toFixed(1)}% (${best.br.n})` : `${best.a.expiry} ticks · historique insuffisant`;
+  const decision=best.rec==='FAVORABLE'?'FAVORABLE':best.rec==='SURVEILLER'?'SURVEILLER':best.rec==='PRUDENCE'?'PRUDENCE':'PROVISOIRE';
+  const cls=decision==='FAVORABLE'?'oktxt':'warntxt';
+  $('heroContent').innerHTML=`<div class="hero-item"><small>🥇 Actif recommandé</small><b>${best.ctx.symbol}</b></div><div class="hero-item"><small>Direction</small><b class="${best.a.dir==='CALL'?'oktxt':'danger'}">${best.a.dir}</b></div><div class="hero-item"><small>Score technique</small><b>${best.a.score}/100</b></div><div class="hero-item"><small>Expiration</small><b>${expiryNote}</b></div><div class="hero-item"><small>Win rate</small><b>${best.empirical==null?'—':best.empirical.toFixed(1)+'%'} <span class="kpi">(${best.n})</span></b></div><div class="hero-item"><small>Confiance</small><b class="${cls}">${best.confidence}</b></div><div class="hero-item"><small>Décision</small><b class="${cls}">${decision}</b></div>`;
+}
+function renderMatrix(candidates){
+  const rows=[];
+  const seen=new Set();
+  for(const x of candidates){
+    const key=x.ctx.symbol+'|'+x.a.dir;if(seen.has(key))continue;seen.add(key);
+    const es=allExpiryStats(x.ctx.symbol,x.a.dir);
+    const valid=Object.entries(es).filter(([,v])=>v.n>=MIN_SETUP_SAMPLE).sort((a,b)=>b[1].lower-a[1].lower || b[1].n-a[1].n);
+    const bestE=valid[0]?.[0]||null;
+    rows.push({x,es,bestE});
+  }
+  rows.sort((a,b)=>(b.x.rank-a.x.rank));
+  $('matrixTable').innerHTML=rows.length?rows.slice(0,12).map(r=>`<tr><td><b>${r.x.ctx.symbol}</b> <span class="badge ${r.x.a.dir.toLowerCase()}">${r.x.a.dir}</span></td>${Array.from({length:9},(_,i)=>{const e=i+2,v=r.es[e],valid=v.n>=MIN_SETUP_SAMPLE;return `<td class="${String(e)===r.bestE?'bestcell':''} ${!valid?'lowcell':''}">${valid?`${v.wr.toFixed(1)}% <span class="tiny">(${v.n})</span>`:'—'}</td>`}).join('')}<td><b>${r.bestE?r.bestE+' ticks':'—'}</b></td></tr>`).join(''):'<tr><td colspan="11" class="muted">Accumulation des résultats en cours…</td></tr>';
+}
+function renderTables(arr){
+  const signals=arr.map(opportunityData).filter(Boolean).sort((a,b)=>b.rank-a.rank);
+  $('signalTable').innerHTML=signals.length?signals.slice(0,15).map((x,i)=>{
+    const expiryText=x.br.n>=MIN_SETUP_SAMPLE && x.br.expiry!==x.a.expiry?`${x.br.expiry} ticks ⭐`:`${x.a.expiry} ticks`;
+    const wr=x.empirical==null?'—':x.empirical.toFixed(1)+'%';
+    const recClass=x.rec==='FAVORABLE'?'best':(x.rec==='SURVEILLER'||x.rec==='PROVISOIRE'?'wait':'');
+    return `<tr><td>${i+1}</td><td><b>${x.ctx.symbol}</b></td><td><span class="badge ${x.a.dir.toLowerCase()}">${x.a.dir}</span></td><td><b>${x.a.score}/100</b></td><td><b>${expiryText}</b></td><td>${x.as.wr==null?'—':x.as.wr.toFixed(1)+'%'} <span class="muted">(${x.as.n})</span></td><td>${wr}</td><td>${x.n}</td><td>${x.confidence}</td><td class="rec ${recClass}">${x.rec}</td></tr>`;
+  }).join(''):'<tr><td colspan="10" class="muted">Aucun signal actif suffisamment confirmé pour le moment.</td></tr>';
+  renderHero(signals);renderMatrix(signals);
+  const best=signals[0];
+  if(best){
+    const wr=best.empirical==null?'—':best.empirical.toFixed(1)+'%';
+    const decision=best.rec==='FAVORABLE'?'RECOMMANDATION FAVORABLE':best.rec==='SURVEILLER'?'SURVEILLER — historique encore limité':best.rec==='PRUDENCE'?'PRUDENCE — données contradictoires':'PROVISOIRE — historique insuffisant';
+    const source=best.br.n>=MIN_SETUP_SAMPLE?`meilleure expiration observée : ${best.br.expiry} ticks · ${best.br.n} trades · borne statistique ${best.br.lower.toFixed(1)}%`:`score technique ${best.a.score}/100 · pas assez d'historique`;
+    $('bestOpportunity').innerHTML=`<div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px"><div><span class="muted">Actif</span><br><b>${best.ctx.symbol}</b></div><div><span class="muted">Signal</span><br><span class="badge ${best.a.dir.toLowerCase()}">${best.a.dir}</span></div><div><span class="muted">Score technique</span><br><b>${best.a.score}/100</b></div><div><span class="muted">Expiration recommandée</span><br><b>${best.br.expiry} ticks</b></div><div><span class="muted">Win rate setup</span><br><b>${wr}</b> <span class="muted">(${best.n})</span></div><div><span class="muted">Win rate actif</span><br><b>${best.as.wr==null?'—':best.as.wr.toFixed(1)+'%'}</b> <span class="muted">(${best.as.n})</span></div><div><span class="muted">Confiance</span><br><b>${best.confidence}</b></div><div><span class="muted">Décision</span><br><b class="rec ${best.rec==='FAVORABLE'?'best':'wait'}">${decision}</b><br><span class="muted">${source}</span></div></div>`;
+    $('bestSummary').textContent=`${best.ctx.symbol} ${best.a.dir} · ${best.br.expiry} ticks`;
+  }else{$('bestOpportunity').innerHTML='<div style="padding:14px" class="muted">Aucune opportunité technique active pour le moment.</div>';$('bestSummary').textContent='—';}
+  $('recommendTable').innerHTML=signals.length?signals.slice(0,MAX_RECOMMENDATIONS).map((x,i)=>`<tr><td><b>${i+1}</b></td><td><b>${x.ctx.symbol}</b></td><td><span class="badge ${x.a.dir.toLowerCase()}">${x.a.dir}</span></td><td><b>${x.a.score}/100</b></td><td><b>${x.br.expiry} ticks</b></td><td>${x.as.wr==null?'—':x.as.wr.toFixed(1)+'%'} ${x.as.n?`(${x.as.n})`:''}</td><td>${x.confidence}</td><td>${x.br.n>=MIN_SETUP_SAMPLE?`WR ${x.br.wr.toFixed(1)}% · ${x.br.n} trades · borne ${x.br.lower.toFixed(1)}%`:'Historique insuffisant — score technique seulement'}</td></tr>`).join(''):'<tr><td colspan="8" class="muted">Pas encore de signal exploitable.</td></tr>';
+  const expiryRows=[];
+  for(const x of signals){
+    const es=allExpiryStats(x.ctx.symbol,x.a.dir), valid=Object.entries(es).filter(([,v])=>v.n>=MIN_SETUP_SAMPLE).sort((a,b)=>b[1].lower-a[1].lower || b[1].n-a[1].n);
+    if(valid.length){const [e,v]=valid[0];expiryRows.push({x,e,v});}
+  }
+  expiryRows.sort((a,b)=>b.v.lower-a.v.lower || b.v.n-a.v.n);
+  $('expiryTable').innerHTML=expiryRows.length?expiryRows.slice(0,10).map(x=>`<tr><td><b>${x.x.ctx.symbol}</b></td><td><span class="badge ${x.x.a.dir.toLowerCase()}">${x.x.a.dir}</span></td><td><b>${x.e} ticks</b></td><td><b>${x.v.wr.toFixed(1)}%</b></td><td>${x.v.n}</td><td>${x.v.n>=MIN_RECOMMEND_SAMPLE?'VALIDÉE':'LIMITÉE'}</td></tr>`).join(''):'<tr><td colspan="6" class="muted">Il faut au moins 5 résultats non-VOID pour commencer à comparer les expirations.</td></tr>';
+}
+
 function render(){
   const arr=[...assets.values()].sort((a,b)=>(b.analysis?.score||0)-(a.analysis?.score||0));
   $("nAssets").textContent=arr.length;
   $("nSignals").textContent=arr.filter(x=>x.analysis?.dir!=="NONE").length;
   const wins=outcomes.filter(x=>x.result==="WIN").length, losses=outcomes.filter(x=>x.result==="LOSS").length;
   $("wins").textContent=wins;$("losses").textContent=losses;$("wr").textContent=(wins+losses)?`${(wins/(wins+losses)*100).toFixed(1)}%`:"—";
+  renderTables(arr);
   if(!arr.length){$("cards").innerHTML='<div class="empty">Aucun actif synthétique détecté.</div>';return;}
   $("cards").innerHTML=arr.map(ctx=>{
     const a=ctx.analysis||{dir:"NONE",score:0,trend:"NEUTRAL",reason:"En attente…"};
     const cls=a.dir==="CALL"?"call":a.dir==="PUT"?"put":a.score>=65?"watch":"none";
     const signal=a.dir==="NONE"?"NO TRADE":`${a.dir}${a.expiry?` · ${a.expiry} ticks`:""}`;
-    return `<article class="card">
-      <div class="card-top"><div><div class="asset">${ctx.symbol}</div><div class="name">${ctx.name}</div></div><span class="pill ${cls}">${signal}</span></div>
-      <div class="price">${fmt(a.price??ctx.ticks.at(-1)?.q, ctx.pip&&ctx.pip<0.001?5:4)}</div>
-      <div class="metrics">
-        <div class="m"><span>Tendance</span><b>${a.trend||"—"}</b></div>
-        <div class="m"><span>Score</span><b>${a.score||0}/100</b></div>
-        <div class="m"><span>RSI</span><b>${fmt(a.rsi,1)}</b></div>
-        <div class="m"><span>EMA 9</span><b>${fmt(a.ema9)}</b></div>
-        <div class="m"><span>EMA 21</span><b>${fmt(a.ema21)}</b></div>
-        <div class="m"><span>EMA 50</span><b>${fmt(a.ema50)}</b></div>
-      </div>
-      <div class="score"><i style="width:${Math.max(0,Math.min(100,a.score||0))}%"></i></div>
-      <div class="reason">${a.reason||"—"}</div>
-      <div class="footer"><span>${ctx.status}</span><span>${ctx.ticks.length} ticks</span></div>
-    </article>`;
+    const pending=ctx.pending?.length||0;
+    return `<article class="card"><div class="card-top"><div><div class="asset">${ctx.symbol}</div><div class="name">${ctx.name}</div></div><span class="pill ${cls}">${signal}</span></div><div class="price">${fmt(a.price??ctx.ticks.at(-1)?.q, ctx.pip&&ctx.pip<0.001?5:4)}</div><div class="metrics"><div class="m"><span>Tendance</span><b>${a.trend||"—"}</b></div><div class="m"><span>Score</span><b>${a.score||0}/100</b></div><div class="m"><span>RSI</span><b>${fmt(a.rsi,1)}</b></div><div class="m"><span>EMA 9</span><b>${fmt(a.ema9)}</b></div><div class="m"><span>EMA 21</span><b>${fmt(a.ema21)}</b></div><div class="m"><span>EMA 50</span><b>${fmt(a.ema50)}</b></div></div><div class="score"><i style="width:${Math.max(0,Math.min(100,a.score||0))}%"></i></div><div class="reason">${a.reason||"—"}</div><div class="footer"><span>${ctx.status}</span><span>${ctx.ticks.length} ticks${pending?` · ${pending} en suivi`:""}</span></div></article>`;
   }).join("");
 }
 
@@ -261,7 +505,6 @@ function connect(){
   ws.onclose=(ev)=>{log(`WebSocket CLOSED — code=${ev.code} reason=${ev.reason||"(aucune raison)"} clean=${ev.wasClean}`);setConn(false,"Déconnecté");for(const c of assets.values())c.status="OFFLINE";render();};
   ws.onerror=(ev)=>{log(`WebSocket ERROR — type=${ev.type||"error"}. Ouvre F12 > Console si nécessaire.`);setConn(false,"Erreur");};
   ws.onmessage=(ev)=>{
-    log("Réponse Deriv reçue.");
     let d;try{d=JSON.parse(ev.data)}catch{return}
     if(d.error){log(`API error: ${d.error.message||"inconnue"}`);return}
     if(d.msg_type==="active_symbols"){
@@ -269,7 +512,7 @@ function connect(){
       // Keep a bounded but broad set. User can see all symbols returned by the synthetic filter.
       assets.clear();
       for(const s of list) assets.set(s.underlying_symbol,makeContext(s));
-      log(`${list.length} actifs synthétiques détectés.`);
+      log(`${list.length} actifs synthétiques détectés · chargement historique + flux LIVE.`);
       for(const c of assets.values()) loadHistory(c);
       subscribeAll();
     } else if(d.msg_type==="history"){
@@ -281,7 +524,9 @@ function connect(){
       for(let i=0;i<prices.length;i++) if(Number.isFinite(Number(prices[i]))) ctx.ticks.push({q:Number(prices[i]),epoch:Number(times[i]||0)});
       if(ctx.ticks.length>MAX_TICKS)ctx.ticks=ctx.ticks.slice(-MAX_TICKS);
       if(ctx.ticks.length)ctx.lastEpoch=ctx.ticks.at(-1).epoch;
-      ctx.analysis=analyze(ctx);render();
+      ctx.analysis=analyze(ctx);
+      if(ctx.ticks.length>=MIN_TICKS) log(`${ctx.symbol}: ${ctx.ticks.length} ticks chargés · analyse active.`);
+      render();
     } else if(d.msg_type==="tick"){
       const t=d.tick;if(!t)return;
       const ctx=assets.get(t.symbol);if(ctx)addTick(ctx,Number(t.quote),Number(t.epoch));
@@ -292,7 +537,7 @@ function connect(){
 $("start").onclick=()=>{ $("start").disabled=true;$("stop").disabled=false; connect(); };
 $("stop").onclick=()=>{running=false;if(ws)ws.close();$("start").disabled=false;$("stop").disabled=true;};
 $("refresh").onclick=()=>{if(ws&&ws.readyState===WebSocket.OPEN)send({active_symbols:"brief"});else connect();};
-$("clear").onclick=()=>{if(confirm("Effacer les résultats WIN/LOSS locaux ?")){outcomes.length=0;localStorage.removeItem("deriv_signal_outcomes");render();log("Historique local effacé.");}};
+$("clear").onclick=()=>{if(confirm("Effacer les résultats WIN/LOSS locaux ?")){outcomes.length=0;localStorage.removeItem("deriv_signal_outcomes");for(const c of assets.values()){c.pending=[];c.signal=null}render();log("Historique local effacé.");}};
 
 render();
 </script>
