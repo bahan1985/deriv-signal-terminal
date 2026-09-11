@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Deriv Signal Terminal</title>
+  <style>
+    :root{--bg:#07111f;--panel:#0d1b2d;--panel2:#101f33;--line:#20344d;--txt:#e8eef7;--muted:#8fa4bd;--green:#25d17d;--red:#ff5d6c;--yellow:#f5c451;--blue:#55a7ff}
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#06101c,#09192b);color:var(--txt);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    header{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;position:sticky;top:0;background:#07111fee;backdrop-filter:blur(12px);z-index:5}
+    h1{font-size:20px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:4px}.status{display:flex;gap:8px;align-items:center;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:var(--red)}.dot.ok{background:var(--green);box-shadow:0 0 12px #25d17d88}
+    main{max-width:1500px;margin:auto;padding:18px}.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}.btn{border:1px solid var(--line);background:var(--panel);color:var(--txt);padding:9px 13px;border-radius:9px;cursor:pointer}.btn:hover{border-color:#3c5b7e}.btn.primary{background:#12345a;border-color:#2b6ca7}.btn.warn{border-color:#7b6425}.btn:disabled{opacity:.5;cursor:not-allowed}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}.card{background:linear-gradient(180deg,var(--panel),#0a1727);border:1px solid var(--line);border-radius:13px;padding:14px;min-height:220px;box-shadow:0 10px 25px #0002}.card-top{display:flex;justify-content:space-between;gap:10px}.asset{font-weight:750}.name{font-size:11px;color:var(--muted);margin-top:3px}.pill{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid var(--line)}.pill.call{color:var(--green);border-color:#1f7d53;background:#0d3b28}.pill.put{color:var(--red);border-color:#81313c;background:#421820}.pill.watch{color:var(--yellow);border-color:#806a29;background:#382f12}.pill.none{color:var(--muted)}
+    .price{font-size:22px;font-weight:750;margin:15px 0}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.m{background:var(--panel2);border:1px solid #1a2d43;border-radius:8px;padding:7px}.m span{display:block;color:var(--muted);font-size:10px}.m b{font-size:12px}.score{margin-top:11px;height:8px;background:#17283b;border-radius:99px;overflow:hidden}.score>i{display:block;height:100%;background:linear-gradient(90deg,var(--yellow),var(--green));width:0}.reason{font-size:11px;color:#b6c6d8;margin-top:9px;line-height:1.45}.footer{display:flex;justify-content:space-between;gap:10px;margin-top:12px;font-size:11px;color:var(--muted)}
+    .empty{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.log{margin-top:16px;background:#06101b;border:1px solid var(--line);border-radius:12px;padding:12px;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:180px;overflow:auto;color:#a9bfd6}
+    .stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}.stat small{display:block;color:var(--muted);font-size:10px}.stat b{font-size:16px}
+    @media(max-width:650px){header{align-items:flex-start}.metrics{grid-template-columns:repeat(2,1fr)}main{padding:10px}.card{min-height:0}}
+  </style>
+</head>
+<body>
+<header>
+  <div><h1>Deriv Signal Terminal</h1><div class="sub">Multi-actifs · tick-by-tick · signaux manuels CALL / PUT · aucune exécution automatique</div></div>
+  <div class="status"><span id="dot" class="dot"></span><span id="connection">Déconnecté</span></div>
+</header>
+<main>
+  <div class="toolbar">
+    <button class="btn primary" id="start">▶ Démarrer le scanner</button>
+    <button class="btn" id="stop" disabled>■ Arrêter</button>
+    <button class="btn" id="refresh">↻ Recharger les actifs</button>
+    <button class="btn warn" id="clear">Effacer l'historique local</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><small>Actifs suivis</small><b id="nAssets">0</b></div>
+    <div class="stat"><small>Signaux actifs</small><b id="nSignals">0</b></div>
+    <div class="stat"><small>WIN</small><b id="wins">0</b></div>
+    <div class="stat"><small>LOSS</small><b id="losses">0</b></div>
+    <div class="stat"><small>Taux observé</small><b id="wr">—</b></div>
+  </div>
+  <div id="cards" class="grid"><div class="empty">Clique sur « Démarrer le scanner ».</div></div>
+  <div class="log" id="log"></div>
+</main>
+
+<script>
+"use strict";
+
+/*
+  IMPORTANT:
+  - Market-data only. No login, no orders, no buy/sell API.
+  - The signal engine is a heuristic scoring system, not a profit guarantee.
+  - All asset contexts are isolated: their tick buffers, state, cooldown and history are independent.
+*/
+
+const WS_URL = "wss://ws.binaryws.com/websockets/v3";
+const MAX_TICKS = 300;
+const MIN_TICKS = 80;
+const SIGNAL_THRESHOLD = 75;
+const STRONG_THRESHOLD = 85;
+const COOLDOWN_TICKS = 8;
+const MAX_EXPIRY = 10;
+
+let ws = null, running = false, reqId = 0;
+const assets = new Map();
+const outcomes = JSON.parse(localStorage.getItem("deriv_signal_outcomes") || "[]");
+
+const $ = id => document.getElementById(id);
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  $("log").textContent = `[${t}] ${msg}\n` + $("log").textContent.slice(0,7000);
+}
+function send(o){ if(ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({...o,req_id:++reqId})); }
+function setConn(ok, text){$("dot").className="dot"+(ok?" ok":"");$("connection").textContent=text}
+
+function isSynthetic(s){
+  const type = String(s.underlying_symbol_type||"").toLowerCase();
+  const market = String(s.market||"").toLowerCase();
+  const submarket = String(s.submarket||"").toLowerCase();
+  const name = String(s.underlying_symbol_name||"").toLowerCase();
+  return type.includes("synthetic") || market.includes("synthetic") || submarket.includes("synthetic") ||
+    /volatility|crash|boom|jump|step|range break|drift|daily reset|dex|treasure|basket|skew|leap/.test(name);
+}
+
+function ema(values, period){
+  if(values.length < period) return null;
+  const k = 2/(period+1);
+  let e = values.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<values.length;i++) e = values[i]*k + e*(1-k);
+  return e;
+}
+function rsi(values, period=14){
+  if(values.length < period+1) return null;
+  let gains=0, losses=0;
+  for(let i=values.length-period;i<values.length;i++){
+    const d=values[i]-values[i-1];
+    if(d>=0) gains+=d; else losses-=d;
+  }
+  if(losses===0) return 100;
+  const rs=(gains/period)/(losses/period);
+  return 100-(100/(1+rs));
+}
+function meanAbsMove(values, period=20){
+  if(values.length<period+1) return null;
+  let s=0;
+  for(let i=values.length-period;i<values.length;i++) s+=Math.abs(values[i]-values[i-1]);
+  return s/period;
+}
+function roc(values, n=10){
+  if(values.length<=n) return null;
+  const p=values[values.length-1], q=values[values.length-1-n];
+  return q===0?0:(p-q)/Math.abs(q)*100;
+}
+function accel(values){
+  if(values.length<7) return 0;
+  const a=values[values.length-1]-values[values.length-2];
+  const b=values[values.length-3]-values[values.length-4];
+  return a-b;
+}
+function slope(values, period=12){
+  if(values.length<period) return 0;
+  const a=ema(values.slice(0,-Math.floor(period/2)),20);
+  const b=ema(values.slice(-Math.floor(period/2)),20);
+  if(a==null||b==null) return 0;
+  return b-a;
+}
+function structure(values, look=12){
+  if(values.length<look*2) return 0;
+  const recent=values.slice(-look), prev=values.slice(-look*2,-look);
+  const rh=Math.max(...recent), ph=Math.max(...prev), rl=Math.min(...recent), pl=Math.min(...prev);
+  if(rh>ph && rl>pl) return 1;
+  if(rh<ph && rl<pl) return -1;
+  return 0;
+}
+function fmt(x, d=5){ return x==null||!Number.isFinite(x)?"—":Number(x).toFixed(d); }
+
+function analyze(ctx){
+  const v=ctx.ticks.map(x=>x.q);
+  if(v.length<MIN_TICKS) return {dir:"NONE",score:0,expiry:null,trend:"NEUTRAL",reason:`Initialisation: ${v.length}/${MIN_TICKS} ticks`};
+  const price=v.at(-1);
+  const e9=ema(v,9), e21=ema(v,21), e50=ema(v,50);
+  const e21prev=ema(v.slice(0,-8),21), e50prev=ema(v.slice(0,-8),50);
+  const rs=rsi(v,14), rr=roc(v,10), mv=meanAbsMove(v,20), ac=accel(v), st=structure(v,12);
+  const gap = e50 ? (e21-e50)/Math.max(mv||1e-12,1e-12) : 0;
+  const sl = e21prev==null?0:e21-e21prev;
+  let bull=0,bear=0,reasons=[];
+  if(e9>e21 && e21>e50){bull+=20; reasons.push("EMA alignées ↑")}
+  else if(e9<e21 && e21<e50){bear+=20; reasons.push("EMA alignées ↓")}
+  else {bull+=5;bear+=5}
+  if(sl>0){bull+=10;reasons.push("pente EMA21 ↑")} else if(sl<0){bear+=10;reasons.push("pente EMA21 ↓")}
+  if(rr>0.02){bull+=15;reasons.push("momentum +")} else if(rr<-0.02){bear+=15;reasons.push("momentum -")}
+  if(rs>55 && rs<75){bull+=10;reasons.push("RSI favorable")} else if(rs<45 && rs>25){bear+=10;reasons.push("RSI favorable")}
+  if(st>0){bull+=15;reasons.push("structure HH/HL")} else if(st<0){bear+=15;reasons.push("structure LH/LL")}
+  if(mv>0){ // volatility gate, not a direction vote
+    const normalized = Math.abs(rr||0)/(mv/Math.max(price,1e-12));
+    if(normalized>0.7){bull+=5;bear+=5;reasons.push("volatilité exploitable")}
+  }
+  if(ac>0){bull+=10;reasons.push("accélération ↑")} else if(ac<0){bear+=10;reasons.push("accélération ↓")}
+  // Recent confirmation: direction consistent over last 5 ticks
+  const diffs=v.slice(-6).slice(1).map((x,i)=>x-v.slice(-6)[i]);
+  const pos=diffs.filter(x=>x>0).length, neg=diffs.filter(x=>x<0).length;
+  if(pos>=4){bull+=10;reasons.push("confirmation récente ↑")} else if(neg>=4){bear+=10;reasons.push("confirmation récente ↓")}
+
+  let dir = bull>=bear ? "CALL" : "PUT";
+  let score = Math.min(100, Math.max(bull,bear));
+  const contradiction = Math.abs(bull-bear);
+  if(contradiction<12) {score=Math.min(score,64);dir="NONE";reasons.push("confluence insuffisante")}
+  if((dir==="CALL" && rs>78) || (dir==="PUT" && rs<22)){score=Math.min(score,69);dir="NONE";reasons.push("risque d'épuisement")}
+  if(!Number.isFinite(score)){score=0;dir="NONE"}
+
+  let trend="NEUTRAL";
+  if(e21>e50 && price>e21) trend="HAUSSIÈRE";
+  if(e21<e50 && price<e21) trend="BAISSIÈRE";
+
+  // Dynamic expiry: stronger momentum/acceleration => shorter expiry; weak/slow => longer.
+  const strength = Math.min(1, Math.abs(rr||0)/0.12 + Math.abs(ac||0)/(Math.max(mv||1e-12,1e-12)*2));
+  let expiry = Math.round(9 - strength*5);
+  if(score>=85) expiry=Math.min(expiry,6);
+  if(score<75) expiry=null;
+  expiry = expiry==null?null:Math.max(2,Math.min(MAX_EXPIRY,expiry));
+
+  if(score<SIGNAL_THRESHOLD) dir="NONE";
+  const level = score>=STRONG_THRESHOLD?"STRONG":score>=SIGNAL_THRESHOLD?"SIGNAL":score>=65?"WATCH":"NO TRADE";
+  return {dir,score,expiry,trend,level,reason:reasons.slice(0,5).join(" · "),price,ema9:e9,ema21:e21,ema50:e50,rsi:rs,roc:rr,vol:mv,accel:ac};
+}
+
+function makeContext(s){
+  return {symbol:s.underlying_symbol,name:s.underlying_symbol_name||s.underlying_symbol,
+    pip:s.pip_size||null,ticks:[],lastEpoch:0,cooldown:0,signal:null,status:"CONNECTING",meta:s};
+}
+
+function addTick(ctx, q, epoch){
+  if(ctx.lastEpoch===epoch) return; // duplicate protection
+  if(!Number.isFinite(q)) return;
+  ctx.lastEpoch=epoch;
+  ctx.ticks.push({q,epoch});
+  if(ctx.ticks.length>MAX_TICKS)ctx.ticks.shift();
+  if(ctx.cooldown>0)ctx.cooldown--;
+  const a=analyze(ctx);
+  // New signal only after cooldown and when score crosses threshold.
+  if(ctx.cooldown===0 && a.dir!=="NONE"){
+    const previous=ctx.signal;
+    if(!previous || previous.dir!==a.dir || previous.score<SIGNAL_THRESHOLD){
+      ctx.signal={...a,createdEpoch:epoch,entry:q};
+      ctx.cooldown=COOLDOWN_TICKS;
+      log(`SIGNAL ${ctx.symbol}: ${a.dir} ${a.score}/100 · expiration ${a.expiry} ticks`);
+    }
+  }
+  ctx.analysis=a;
+  render();
+}
+
+function render(){
+  const arr=[...assets.values()].sort((a,b)=>(b.analysis?.score||0)-(a.analysis?.score||0));
+  $("nAssets").textContent=arr.length;
+  $("nSignals").textContent=arr.filter(x=>x.analysis?.dir!=="NONE").length;
+  const wins=outcomes.filter(x=>x.result==="WIN").length, losses=outcomes.filter(x=>x.result==="LOSS").length;
+  $("wins").textContent=wins;$("losses").textContent=losses;$("wr").textContent=(wins+losses)?`${(wins/(wins+losses)*100).toFixed(1)}%`:"—";
+  if(!arr.length){$("cards").innerHTML='<div class="empty">Aucun actif synthétique détecté.</div>';return;}
+  $("cards").innerHTML=arr.map(ctx=>{
+    const a=ctx.analysis||{dir:"NONE",score:0,trend:"NEUTRAL",reason:"En attente…"};
+    const cls=a.dir==="CALL"?"call":a.dir==="PUT"?"put":a.score>=65?"watch":"none";
+    const signal=a.dir==="NONE"?"NO TRADE":`${a.dir}${a.expiry?` · ${a.expiry} ticks`:""}`;
+    return `<article class="card">
+      <div class="card-top"><div><div class="asset">${ctx.symbol}</div><div class="name">${ctx.name}</div></div><span class="pill ${cls}">${signal}</span></div>
+      <div class="price">${fmt(a.price??ctx.ticks.at(-1)?.q, ctx.pip&&ctx.pip<0.001?5:4)}</div>
+      <div class="metrics">
+        <div class="m"><span>Tendance</span><b>${a.trend||"—"}</b></div>
+        <div class="m"><span>Score</span><b>${a.score||0}/100</b></div>
+        <div class="m"><span>RSI</span><b>${fmt(a.rsi,1)}</b></div>
+        <div class="m"><span>EMA 9</span><b>${fmt(a.ema9)}</b></div>
+        <div class="m"><span>EMA 21</span><b>${fmt(a.ema21)}</b></div>
+        <div class="m"><span>EMA 50</span><b>${fmt(a.ema50)}</b></div>
+      </div>
+      <div class="score"><i style="width:${Math.max(0,Math.min(100,a.score||0))}%"></i></div>
+      <div class="reason">${a.reason||"—"}</div>
+      <div class="footer"><span>${ctx.status}</span><span>${ctx.ticks.length} ticks</span></div>
+    </article>`;
+  }).join("");
+}
+
+function subscribeAll(){
+  for(const ctx of assets.values()){
+    ctx.status="LIVE";
+    send({ticks:ctx.symbol,subscribe:1});
+  }
+  render();
+}
+
+function loadHistory(ctx){
+  send({ticks_history:ctx.symbol,count:MAX_TICKS,end:"latest",style:"ticks"});
+}
+
+function connect(){
+  if(ws) try{ws.close()}catch{}
+  setConn(false,"Connexion…");
+  ws=new WebSocket(WS_URL);
+  ws.onopen=()=>{
+    running=true;setConn(true,"Connecté à Deriv");
+    log("WebSocket connecté.");
+    send({active_symbols:"brief"});
+  };
+  ws.onclose=()=>{setConn(false,"Déconnecté");for(const c of assets.values())c.status="OFFLINE";render();};
+  ws.onerror=()=>{log("Erreur WebSocket.");setConn(false,"Erreur");};
+  ws.onmessage=(ev)=>{
+    let d;try{d=JSON.parse(ev.data)}catch{return}
+    if(d.error){log(`API error: ${d.error.message||"inconnue"}`);return}
+    if(d.msg_type==="active_symbols"){
+      const list=(d.active_symbols||[]).filter(isSynthetic);
+      // Keep a bounded but broad set. User can see all symbols returned by the synthetic filter.
+      assets.clear();
+      for(const s of list) assets.set(s.underlying_symbol,makeContext(s));
+      log(`${list.length} actifs synthétiques détectés.`);
+      for(const c of assets.values()) loadHistory(c);
+      subscribeAll();
+    } else if(d.msg_type==="history"){
+      const symbol=d.echo_req?.ticks_history || d.echo_req?.ticks || d.history?.symbol;
+      const ctx=assets.get(symbol);
+      if(!ctx)return;
+      const prices=d.history||[], times=d.times||[];
+      ctx.ticks=[];
+      for(let i=0;i<prices.length;i++) if(Number.isFinite(Number(prices[i]))) ctx.ticks.push({q:Number(prices[i]),epoch:Number(times[i]||0)});
+      if(ctx.ticks.length>MAX_TICKS)ctx.ticks=ctx.ticks.slice(-MAX_TICKS);
+      if(ctx.ticks.length)ctx.lastEpoch=ctx.ticks.at(-1).epoch;
+      ctx.analysis=analyze(ctx);render();
+    } else if(d.msg_type==="tick"){
+      const t=d.tick;if(!t)return;
+      const ctx=assets.get(t.symbol);if(ctx)addTick(ctx,Number(t.quote),Number(t.epoch));
+    }
+  };
+}
+
+$("start").onclick=()=>{ $("start").disabled=true;$("stop").disabled=false; connect(); };
+$("stop").onclick=()=>{running=false;if(ws)ws.close();$("start").disabled=false;$("stop").disabled=true;};
+$("refresh").onclick=()=>{if(ws&&ws.readyState===WebSocket.OPEN)send({active_symbols:"brief"});else connect();};
+$("clear").onclick=()=>{if(confirm("Effacer les résultats WIN/LOSS locaux ?")){outcomes.length=0;localStorage.removeItem("deriv_signal_outcomes");render();log("Historique local effacé.");}};
+
+render();
+</script>
+</body>
+</html>
