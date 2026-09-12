@@ -161,8 +161,10 @@ const FOCUS_MIN_WINRATE = 62;
 const FOCUS_MIN_LOWER = 55;
 const MAX_FOCUS = 5;
 const MAX_RECOMMENDATIONS = 8;
-const DEMO_STAKE_PCT = 0.005;
-const DEMO_MIN_SCORE = SIGNAL_THRESHOLD; // Une recommandation exploitable (75+) peut être exécutée en AUTO-DÉMO. 85+ reste un signal FORT.
+const DEMO_STAKE_PCT = 0.005; // Mise fixe = 0,5% du solde au moment du signal. AUCUNE martingale.
+const DEMO_MIN_SCORE = 85; // AUTO-DÉMO strict : seules les recommandations >= 85/100 sont exécutées.
+// Aucune augmentation de mise après une perte : la taille reste strictement 0,5% du solde au moment de chaque entrée.
+const DEMO_MARTINGALE_ENABLED = false;
 const DEMO_MAX_CONCURRENT = 3;
 const DEMO_MAX_DRAWDOWN_PCT = 0.10;
 const DEMO_MAX_PROFIT_PCT = 0.10;
@@ -856,7 +858,7 @@ Arrêt automatique si perte session ≥ 10% OU gain session ≥ 10% du capital d
   demoAuto=!demoAuto;
   $("demoAuto").textContent=demoAuto?(executionMode==="demo"?"⏸ Désactiver AUTO-DÉMO":"⏸ Désactiver AUTO-RÉEL"):(executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL");
   renderDemoTrades();
-  log(demoAuto?`AUTO-${executionMode.toUpperCase()} ACTIVÉ — ${DEMO_STAKE_PCT*100}% du solde · aucun plafond de nombre de trades/jour · seuil AUTO ${DEMO_MIN_SCORE}/100 (85+ = signal FORT).`:`AUTO-${executionMode.toUpperCase()} DÉSACTIVÉ.`);
+  log(demoAuto?`AUTO-${executionMode.toUpperCase()} ACTIVÉ — ${DEMO_STAKE_PCT*100}% du solde · aucun plafond de nombre de trades/jour · seuil AUTO ${DEMO_MIN_SCORE}/100 · mise fixe 0,5% · MARTINGALE DÉSACTIVÉE.`:`AUTO-${executionMode.toUpperCase()} DÉSACTIVÉ.`);
   if(demoAuto) {
     setTimeout(triggerAutoForCurrentSignals,150);
     log(`AUTO: mode exécution activé — toute recommandation ${DEMO_MIN_SCORE}/100 ou plus déclenche automatiquement PROPOSITION → BUY.`);
@@ -941,7 +943,9 @@ async function requestDemoTrade(ctx,sig){
     return;
   }
   const rawStake=Math.max(0,demoBalanceValue*DEMO_STAKE_PCT);
-  const stake=Math.floor((rawStake+1e-9)*100)/100;
+  // Sécurité anti-martingale : aucune dépendance au résultat du trade précédent.
+  const fixedStake=rawStake;
+  const stake=Math.floor((fixedStake+1e-9)*100)/100;
   if(!Number.isFinite(stake)||stake<=0){demoLastDecision="REFUSÉ — solde invalide";return;}
   const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,createdAt:Date.now(),type:"contractsFor",stage:"PRÉ-CHECK"};
   demoPendingAssets.add(ctx.symbol);
