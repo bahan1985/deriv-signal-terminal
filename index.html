@@ -52,6 +52,7 @@
       <div class="demo-chooser-title">Comptes Options détectés</div><div class="tiny warntxt" style="margin-bottom:8px">Étape suivante : sélectionne DÉMO puis clique sur « Connecter le compte DÉMO ».</div>
       <div id="accountList" class="account-list"></div>
       <div class="tiny muted">Le compte choisi est utilisé uniquement pour la session d’exécution. Le mode réel est volontairement verrouillé par une confirmation explicite.</div>
+      <div id="demoConnectionHint" class="tiny muted" style="margin-top:6px">Après la détection, sélectionne DÉMO puis clique sur « Connecter le compte DÉMO ».</div>
     </div>
     <div class="demo-actions">
       <button class="btn primary" id="demoModeDemo" disabled>🟢 DÉMO — sélectionner</button>
@@ -858,6 +859,7 @@ $("demoConnectSelected").onclick=()=>connectSelectedAccount();
 syncDemoConnectButton();
 render();
 renderDemoTrades();
+updateExecutionControls();
 </script>
 </body>
 </html>
