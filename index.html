@@ -940,10 +940,12 @@ async function requestDemoTrade(ctx,sig){
     demoLastDecision=`LIMITE SIMULTANÉE — ${DEMO_MAX_CONCURRENT}`;
     return;
   }
-  const stake=Math.max(0,demoBalanceValue*DEMO_STAKE_PCT);
+  const rawStake=Math.max(0,demoBalanceValue*DEMO_STAKE_PCT);
+  const stake=Math.floor((rawStake+1e-9)*100)/100;
   if(!Number.isFinite(stake)||stake<=0){demoLastDecision="REFUSÉ — solde invalide";return;}
   const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,createdAt:Date.now(),type:"contractsFor",stage:"PRÉ-CHECK"};
   demoPendingAssets.add(ctx.symbol);
+  log(`💰 AUTO ${ctx.symbol}: mise calculée ${rawStake.toFixed(4)} → ${stake.toFixed(2)} ${demoCurrency} (arrondie à 2 décimales pour Deriv).`);
   const req=demoSend({contracts_for:ctx.symbol});
   if(!req){demoPendingAssets.delete(ctx.symbol);demoLastDecision=`ÉCHEC PRÉ-CHECK — ${ctx.symbol}`;log(`AUTO ${ctx.symbol}: envoi contracts_for impossible.`);return;}
   demoByReq.set(req,meta);
