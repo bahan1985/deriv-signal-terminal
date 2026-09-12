@@ -37,7 +37,7 @@
 
   <section class="demo-panel">
     <div class="demo-title">🧪 EXÉCUTION AUTOMATIQUE — DÉMO par défaut, RÉEL verrouillé</div>
-    <div class="demo-sub"><b>AUTO-DÉMO = prise de position réelle sur le compte DÉMO.</b> Une recommandation exploitable (score ≥ 75) déclenche automatiquement PROPOSITION → BUY → contrat ouvert → suivi jusqu’à expiration. Le token reste uniquement en mémoire dans cette page.</div>
+    <div class="demo-sub"><b>AUTO-DÉMO = prise de position réelle sur le compte DÉMO.</b> Une recommandation techniquement exploitable (score ≥ 85) sur un actif ayant au moins 50% de taux observé historique déclenche automatiquement PROPOSITION → BUY → contrat ouvert → suivi jusqu’à expiration. Le token reste uniquement en mémoire dans cette page.</div>
     <div class="demo-grid">
       <input class="demo-input" id="demoAppId" placeholder="Deriv App ID" autocomplete="off">
       <input class="demo-input" id="demoToken" type="password" placeholder="Personal Access Token (PAT)" autocomplete="off">
@@ -161,10 +161,12 @@ const FOCUS_MIN_WINRATE = 62;
 const FOCUS_MIN_LOWER = 55;
 const MAX_FOCUS = 5;
 const MAX_RECOMMENDATIONS = 8;
-const DEMO_STAKE_PCT = 0.005; // Mise fixe = 0,5% du solde au moment du signal. AUCUNE martingale.
+const DEMO_STAKE_PCT = 0.005; // Base = 0,5% du solde au moment de l'entrée.
 const DEMO_MIN_SCORE = 85; // AUTO-DÉMO strict : seules les recommandations >= 85/100 sont exécutées.
-// Aucune augmentation de mise après une perte : la taille reste strictement 0,5% du solde au moment de chaque entrée.
-const DEMO_MARTINGALE_ENABLED = false;
+const DEMO_MIN_ASSET_WR = 50; // L'actif doit avoir un taux observé historique >= 50% avant toute entrée AUTO.
+const DEMO_MIN_ASSET_SAMPLE = 1; // Il faut au moins un résultat antérieur pour disposer d’un taux observé préalable.
+const DEMO_MARTINGALE_ENABLED = true;
+const DEMO_MARTINGALE_FACTOR = 1.7; // Après une perte AUTO, la prochaine mise = mise précédente × 1,7. Après un gain, retour à la base 0,5%.
 const DEMO_MAX_CONCURRENT = 3;
 const DEMO_MAX_DRAWDOWN_PCT = 0.10;
 const DEMO_MAX_PROFIT_PCT = 0.10;
@@ -173,6 +175,8 @@ const REAL_MODE_UNLOCK_TEXT = "J’ASSUME LE RISQUE RÉEL";
 let demoWs = null, demoToken = "", demoAppId = "", demoAccountId = "", demoConnected = false, demoAuto = false, demoReqId = 50000;
 let demoBalanceValue = null, demoCurrency = "—";
 let demoLastDecision = "—";
+let demoNextStake = null;
+let demoLastAutoResult = null;
 let demoRiskStartBalance = null, demoRiskTriggered = false, demoRiskStopInProgress = false;
 let executionMode = "demo", realModeUnlocked = false, discoveredAccounts = [];
 
@@ -456,6 +460,9 @@ function autoDemoEligibilityReason(ctx,a){
   if(!demoConnected) return "compte démo non connecté";
   if(!a || a.dir==="NONE" || !a.expiry) return "aucun signal exploitable";
   if(a.score<DEMO_MIN_SCORE) return `score ${a.score}/100 < seuil AUTO ${DEMO_MIN_SCORE}`;
+  const hist=assetStats(ctx.symbol);
+  if(hist.n<DEMO_MIN_ASSET_SAMPLE) return `historique actif insuffisant (${hist.n}/${DEMO_MIN_ASSET_SAMPLE})`;
+  if(hist.wr<DEMO_MIN_ASSET_WR) return `taux actif ${hist.wr.toFixed(1)}% < minimum ${DEMO_MIN_ASSET_WR}%`;
   if(a.createdEpoch!=null && ctx.pending?.some(s=>s.createdEpoch===a.createdEpoch)) return "signal déjà en suivi";
   if(ctx.demoOpen) return "position déjà ouverte sur cet actif";
   if(demoPendingAssets.has(ctx.symbol)) return "proposition déjà en attente";
@@ -666,6 +673,19 @@ async function connectSelectedAccount(options={}){
     scheduleDemoReconnect(err.message);
   }
 }
+function updateMartingaleAfterAutoClose(trade){
+  if(!DEMO_MARTINGALE_ENABLED || !trade || trade.mode!=="demo") return;
+  if(trade.result==="LOSS"){
+    demoLastAutoResult="LOSS";
+    demoNextStake=Math.max(0,Number(trade.stake||0))*DEMO_MARTINGALE_FACTOR;
+    log(`📈 MARTINGALE: perte précédente sur ${trade.asset} → prochaine mise cible ${demoNextStake.toFixed(2)} ${demoCurrency} (×${DEMO_MARTINGALE_FACTOR}).`);
+  }else if(trade.result==="WIN" || trade.result==="VOID"){
+    demoLastAutoResult=trade.result;
+    demoNextStake=null;
+    log(`🔄 MARTINGALE: ${trade.result} → retour à la mise de base ${DEMO_STAKE_PCT*100}%.`);
+  }
+}
+
 function handleExecutionMessage(ev){
   if(noteDemoPong(ev)) return;
   let d;try{d=JSON.parse(ev.data)}catch{return}
@@ -844,7 +864,7 @@ function toggleDemoAuto(){
       const answer=prompt(`ACTIVER AUTO-RÉEL ?\n\nCompte réel : ${demoAccountId}\nMise : ${(demoBalanceValue*DEMO_STAKE_PCT).toFixed(2)} ${demoCurrency}\n\nTape exactement : ${REAL_MODE_UNLOCK_TEXT}`);
       if(answer!==REAL_MODE_UNLOCK_TEXT){log("AUTO-RÉEL: activation annulée.");return;}
     }else{
-      const msg=`ACTIVER AUTO-DÉMO ?\n\nCompte démo : ${demoAccountId}\nMise : ${(demoBalanceValue*DEMO_STAKE_PCT).toFixed(2)} ${demoCurrency}\nMaximum simultané : ${DEMO_MAX_CONCURRENT}\nAucun plafond de nombre de trades par jour.\n
+      const msg=`ACTIVER AUTO-DÉMO ?\n\nCompte démo : ${demoAccountId}\nMise de base : ${(demoBalanceValue*DEMO_STAKE_PCT).toFixed(2)} ${demoCurrency}\nMartingale : ×${DEMO_MARTINGALE_FACTOR} après perte\nTaux actif minimum : ${DEMO_MIN_ASSET_WR}%\nMaximum simultané : ${DEMO_MAX_CONCURRENT}\nAucun plafond de nombre de trades par jour.\n
 Arrêt automatique si perte session ≥ 10% OU gain session ≥ 10% du capital de référence.\n\nAucune opération réelle ne sera envoyée.`;
       if(!confirm(msg))return;
     }
@@ -853,15 +873,16 @@ Arrêt automatique si perte session ≥ 10% OU gain session ≥ 10% du capital d
     demoRiskTriggered=false;
     demoRiskStartBalance=Number.isFinite(demoBalanceValue)?demoBalanceValue:null;
     currentAutoSessionId=`${executionMode}-${Date.now()}`;
+    demoNextStake=null; demoLastAutoResult=null;
     log(`GARDE-FOU AUTO: capital de référence ${demoRiskStartBalance?.toFixed(2)||"—"} ${demoCurrency} · perte max -10% = ${demoRiskStartBalance? (demoRiskStartBalance*DEMO_MAX_DRAWDOWN_PCT).toFixed(2):"—"} ${demoCurrency} · take profit +10% = ${demoRiskStartBalance? (demoRiskStartBalance*DEMO_MAX_PROFIT_PCT).toFixed(2):"—"} ${demoCurrency}.`);
   }
   demoAuto=!demoAuto;
   $("demoAuto").textContent=demoAuto?(executionMode==="demo"?"⏸ Désactiver AUTO-DÉMO":"⏸ Désactiver AUTO-RÉEL"):(executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL");
   renderDemoTrades();
-  log(demoAuto?`AUTO-${executionMode.toUpperCase()} ACTIVÉ — ${DEMO_STAKE_PCT*100}% du solde · aucun plafond de nombre de trades/jour · seuil AUTO ${DEMO_MIN_SCORE}/100 · mise fixe 0,5% · MARTINGALE DÉSACTIVÉE.`:`AUTO-${executionMode.toUpperCase()} DÉSACTIVÉ.`);
+  log(demoAuto?`AUTO-${executionMode.toUpperCase()} ACTIVÉ — ${DEMO_STAKE_PCT*100}% du solde · aucun plafond de nombre de trades/jour · seuil AUTO ${DEMO_MIN_SCORE}/100 · taux actif ≥ ${DEMO_MIN_ASSET_WR}% (${DEMO_MIN_ASSET_SAMPLE} résultats min) · martingale ×${DEMO_MARTINGALE_FACTOR} après perte.`:`AUTO-${executionMode.toUpperCase()} DÉSACTIVÉ.`);
   if(demoAuto) {
     setTimeout(triggerAutoForCurrentSignals,150);
-    log(`AUTO: mode exécution activé — toute recommandation ${DEMO_MIN_SCORE}/100 ou plus déclenche automatiquement PROPOSITION → BUY.`);
+    log(`AUTO: mode exécution activé — toute recommandation ${DEMO_MIN_SCORE}/100 ou plus, sur un actif avec taux historique ≥ ${DEMO_MIN_ASSET_WR}%, déclenche automatiquement PROPOSITION → BUY.`);
   }
 }
 function stopDemoAuto(){demoAuto=false;demoPendingAssets.clear();demoByReq.clear();$("demoAuto").textContent=executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL";renderDemoTrades();log("STOP AUTO: aucune nouvelle opération ne sera lancée.");}
@@ -942,14 +963,16 @@ async function requestDemoTrade(ctx,sig){
     demoLastDecision=`LIMITE SIMULTANÉE — ${DEMO_MAX_CONCURRENT}`;
     return;
   }
-  const rawStake=Math.max(0,demoBalanceValue*DEMO_STAKE_PCT);
-  // Sécurité anti-martingale : aucune dépendance au résultat du trade précédent.
-  const fixedStake=rawStake;
-  const stake=Math.floor((fixedStake+1e-9)*100)/100;
+  const baseStake=Math.max(0,demoBalanceValue*DEMO_STAKE_PCT);
+  // Martingale strictement liée au résultat AUTO précédent : perte => mise précédente × 1,7 ; gain/VOID => retour à la base.
+  const rawStake=(DEMO_MARTINGALE_ENABLED && Number.isFinite(demoNextStake) && demoNextStake>0) ? demoNextStake : baseStake;
+  const stake=Math.floor((rawStake+1e-9)*100)/100;
   if(!Number.isFinite(stake)||stake<=0){demoLastDecision="REFUSÉ — solde invalide";return;}
-  const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,createdAt:Date.now(),type:"contractsFor",stage:"PRÉ-CHECK"};
+  const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,baseStake,martingaleApplied:Math.max(1,stake/baseStake||1),createdAt:Date.now(),type:"contractsFor",stage:"PRÉ-CHECK"};
   demoPendingAssets.add(ctx.symbol);
-  log(`💰 AUTO ${ctx.symbol}: mise calculée ${rawStake.toFixed(4)} → ${stake.toFixed(2)} ${demoCurrency} (arrondie à 2 décimales pour Deriv).`);
+  const hist=assetStats(ctx.symbol);
+  const mgText=DEMO_MARTINGALE_ENABLED && stake>baseStake ? ` · MARTINGALE ×${DEMO_MARTINGALE_FACTOR} (précédente perte)` : ` · base ${DEMO_STAKE_PCT*100}%`;
+  log(`💰 AUTO ${ctx.symbol}: taux historique actif ${hist.wr.toFixed(1)}% (${hist.n} résultats) · mise ${rawStake.toFixed(4)} → ${stake.toFixed(2)} ${demoCurrency}${mgText} · arrondie à 2 décimales.`);
   const req=demoSend({contracts_for:ctx.symbol});
   if(!req){demoPendingAssets.delete(ctx.symbol);demoLastDecision=`ÉCHEC PRÉ-CHECK — ${ctx.symbol}`;log(`AUTO ${ctx.symbol}: envoi contracts_for impossible.`);return;}
   demoByReq.set(req,meta);
