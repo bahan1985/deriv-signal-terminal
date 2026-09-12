@@ -24,7 +24,7 @@
 </head>
 <body>
 <header>
-  <div><h1>Deriv Signal Terminal</h1><div class="sub">Multi-actifs · tick-by-tick · signaux manuels CALL / PUT · AUTO-DÉMO sécurisé à 0,5% du capital · coupe-risque -10%</div></div>
+  <div><h1>Deriv Signal Terminal</h1><div class="sub">Multi-actifs · tick-by-tick · signaux manuels CALL / PUT · AUTO-DÉMO sécurisé à 0,5% du capital · AUTO seuil 80/100 · coupe-risque -10%</div></div>
   <div class="status"><span id="dot" class="dot"></span><span id="connection">Déconnecté</span></div>
 </header>
 <main>
@@ -161,7 +161,7 @@ const FOCUS_MIN_LOWER = 55;
 const MAX_FOCUS = 5;
 const MAX_RECOMMENDATIONS = 8;
 const DEMO_STAKE_PCT = 0.005;
-const DEMO_MIN_SCORE = 85;
+const DEMO_MIN_SCORE = 80;
 const DEMO_MAX_CONCURRENT = 3;
 const DEMO_MAX_DRAWDOWN_PCT = 0.10;
 const DEMO_MAX_PROFIT_PCT = 0.10;
@@ -446,14 +446,20 @@ function renderRiskGuard(){
   pnl.textContent=`${pnlVal>=0?"+":""}${pnlVal.toFixed(2)} ${demoCurrency}`;
   panel.classList.toggle("triggered",demoRiskTriggered);
 }
+function autoDemoEligibilityReason(ctx,a){
+  if(!demoAuto) return "AUTO désactivé";
+  if(!demoConnected) return "compte démo non connecté";
+  if(!a || a.dir==="NONE" || !a.expiry) return "aucun signal exploitable";
+  if(a.score<DEMO_MIN_SCORE) return `score ${a.score}/100 < seuil AUTO ${DEMO_MIN_SCORE}`;
+  if(ctx.pending?.some(s=>s.createdEpoch===a.createdEpoch)) return "signal déjà en suivi";
+  if(ctx.demoOpen) return "position déjà ouverte sur cet actif";
+  if(demoPendingAssets.has(ctx.symbol)) return "proposition déjà en attente";
+  if(countOpenDemo()>=DEMO_MAX_CONCURRENT) return `maximum simultané atteint (${DEMO_MAX_CONCURRENT})`;
+  if(!Number.isFinite(demoBalanceValue) || demoBalanceValue<=0) return "solde démo invalide";
+  return "OK";
+}
 function autoDemoEligible(ctx,a){
-  if(!demoAuto || !demoConnected) return false;
-  if(!a || a.dir==="NONE" || !a.expiry || a.score<DEMO_MIN_SCORE) return false;
-  if(ctx.pending?.some(s=>s.createdEpoch===a.createdEpoch)) return false;
-  if(ctx.demoOpen || demoPendingAssets.has(ctx.symbol)) return false;
-  if(countOpenDemo()>=DEMO_MAX_CONCURRENT) return false;
-  if(!Number.isFinite(demoBalanceValue) || demoBalanceValue<=0) return false;
-  return true;
+  return autoDemoEligibilityReason(ctx,a)==="OK";
 }
 function normalizeAccount(a){
   const id=String(a?.account_id||a?.id||a?.loginid||a?.accountId||"");
@@ -621,6 +627,7 @@ async function connectSelectedAccount(options={}){
       log(`EXECUTION: /ws/${executionMode} connecté · compte ${demoAccountId}.`);
       demoSend({balance:1,subscribe:1});
       startDemoHeartbeat();
+      if(demoAuto) setTimeout(triggerAutoForCurrentSignals,250);
       for(const trade of demoTrades.filter(t=>t.status==="OPEN" && t.contractId && (t.mode||"demo")===executionMode)){
         demoByContract.set(String(trade.contractId),trade);
         demoSend({proposal_open_contract:1,contract_id:trade.contractId,subscribe:1});
@@ -657,7 +664,19 @@ async function connectSelectedAccount(options={}){
 function handleExecutionMessage(ev){
   if(noteDemoPong(ev)) return;
   let d;try{d=JSON.parse(ev.data)}catch{return}
-  if(d.error){const meta=demoByReq.get(d.echo_req?.req_id);if(meta){demoPendingAssets.delete(meta.asset);demoByReq.delete(d.echo_req.req_id);}log(`EXECUTION API error: ${d.error.message||"inconnue"}`);return;}
+  if(d.error){
+    const reqId=d.echo_req?.req_id;
+    const meta=demoByReq.get(reqId);
+    if(meta){
+      if(meta.asset) demoPendingAssets.delete(meta.asset);
+      demoByReq.delete(reqId);
+      if(meta.type==="emergencySell") log(`GARDE-FOU: clôture refusée pour #${meta.trade?.contractId||"?"} · ${d.error.message||"erreur inconnue"}`);
+      else log(`AUTO ${meta.asset||"?"}: proposition/achat refusé par Deriv · ${d.error.message||"erreur inconnue"}`);
+    }else{
+      log(`EXECUTION API error: ${d.error.message||"inconnue"}`);
+    }
+    return;
+  }
   if(d.msg_type==="balance"){
     demoBalanceValue=Number(d.balance?.balance);demoCurrency=d.balance?.currency||"—";$('demoBalance').textContent=Number.isFinite(demoBalanceValue)?`${demoBalanceValue.toFixed(2)} ${demoCurrency}`:"—";$('demoStake').textContent=Number.isFinite(demoBalanceValue)?`${(demoBalanceValue*DEMO_STAKE_PCT).toFixed(2)} ${demoCurrency}`:"—";
   }
@@ -748,6 +767,26 @@ function setExecutionMode(mode){
   if(demoConnected){log("MODE: déconnecte d’abord la session actuelle avant de changer de compte.");return;}
   selectExecutionAccount(account,mode);
 }
+function triggerAutoForCurrentSignals(){
+  if(!demoAuto || !demoConnected || demoRiskTriggered) return;
+  const candidates=[...assets.values()]
+    .map(ctx=>({ctx,a:ctx.analysis}))
+    .filter(x=>autoDemoEligible(x.ctx,x.a))
+    .sort((x,y)=>(y.a.score||0)-(x.a.score||0));
+  if(!candidates.length){
+    const active=[...assets.values()].map(ctx=>({ctx,a:ctx.analysis})).filter(x=>x.a?.dir!=="NONE");
+    if(active.length){
+      const reasons=active.slice(0,5).map(x=>`${x.ctx.symbol}: ${autoDemoEligibilityReason(x.ctx,x.a)}`).join(" · ");
+      log(`AUTO: aucun achat immédiat. ${reasons}`);
+    }
+    return;
+  }
+  for(const {ctx,a} of candidates){
+    if(countOpenDemo()>=DEMO_MAX_CONCURRENT) break;
+    requestDemoTrade(ctx,a);
+  }
+}
+
 function toggleDemoAuto(){
   if(!demoConnected){log("AUTO: connecte d’abord le compte sélectionné.");return;}
   if(!demoAuto){
@@ -769,7 +808,8 @@ Arrêt automatique si perte session ≥ 10% OU gain session ≥ 10% du capital d
   demoAuto=!demoAuto;
   $("demoAuto").textContent=demoAuto?(executionMode==="demo"?"⏸ Désactiver AUTO-DÉMO":"⏸ Désactiver AUTO-RÉEL"):(executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL");
   renderDemoTrades();
-  log(demoAuto?`AUTO-${executionMode.toUpperCase()} ACTIVÉ — ${DEMO_STAKE_PCT*100}% du solde · aucun plafond de nombre de trades/jour.`:`AUTO-${executionMode.toUpperCase()} DÉSACTIVÉ.`);
+  log(demoAuto?`AUTO-${executionMode.toUpperCase()} ACTIVÉ — ${DEMO_STAKE_PCT*100}% du solde · aucun plafond de nombre de trades/jour · seuil AUTO ${DEMO_MIN_SCORE}/100.`:`AUTO-${executionMode.toUpperCase()} DÉSACTIVÉ.`);
+  if(demoAuto) setTimeout(triggerAutoForCurrentSignals,150);
 }
 function stopDemoAuto(){demoAuto=false;demoPendingAssets.clear();demoByReq.clear();$("demoAuto").textContent=executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL";renderDemoTrades();log("STOP AUTO: aucune nouvelle opération ne sera lancée.");}
 async function emergencyRiskStop(reason="Seuil de perte atteint"){
@@ -844,7 +884,7 @@ async function requestDemoTrade(ctx,sig){
   const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,createdAt:Date.now()};
   demoPendingAssets.add(ctx.symbol);
   demoByReq.set(req,meta);
-  log(`AUTO-DÉMO ${ctx.symbol}: proposition demandée ${sig.dir} ${sig.expiry} ticks · plafond ${stake.toFixed(2)} ${demoCurrency}`);
+  log(`AUTO-${executionMode.toUpperCase()} ${ctx.symbol}: proposition demandée ${sig.dir} ${sig.expiry} ticks · mise ${stake.toFixed(2)} ${demoCurrency} · score ${sig.score}/100`);
 }
 
 function statsFor(filter){
