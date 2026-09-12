@@ -67,7 +67,7 @@
       <div class="demo-box"><small>Contrats ouverts</small><b id="demoOpenCount">0</b></div>
       <div class="demo-box"><small>Mode / Auto</small><b id="demoAutoState">ARRÊTÉ</b></div>
     </div>
-    <div class="demo-lock">🔒 Sécurité : le terminal découvre les comptes via l’API puis obtient l’URL WebSocket correspondant au compte sélectionné. Le mode RÉEL exige une confirmation distincte. Le token reste uniquement en mémoire dans cette page.</div>
+    <div class="demo-lock">🔒 Sécurité : le terminal découvre les comptes via l’API puis obtient l’URL WebSocket correspondant au compte sélectionné. Le mode RÉEL exige une confirmation distincte. Le token reste uniquement en mémoire dans cette page. <span id="demoHeartbeat" class="kpi">Heartbeat : —</span></div>
   </section>
   <div class="stats">
     <div class="stat"><small>Meilleure recommandation</small><b id="bestSummary">—</b></div>
@@ -161,6 +161,16 @@ const REAL_MODE_UNLOCK_TEXT = "J’ASSUME LE RISQUE RÉEL";
 let demoWs = null, demoToken = "", demoAppId = "", demoAccountId = "", demoConnected = false, demoAuto = false, demoReqId = 50000;
 let demoBalanceValue = null, demoCurrency = "—";
 let executionMode = "demo", realModeUnlocked = false, discoveredAccounts = [];
+
+// Résilience de la session d'exécution : heartbeat + reconnexion automatique.
+const DEMO_HEARTBEAT_MS = 30000;
+const DEMO_PING_TIMEOUT_MS = 10000;
+const DEMO_RECONNECT_BASE_MS = 1000;
+const DEMO_RECONNECT_MAX_MS = 30000;
+const DEMO_RECONNECT_JITTER_MS = 500;
+let demoHeartbeatTimer = null, demoPingTimeout = null, demoLastPongAt = 0, demoLastPingReqId = 0;
+let demoReconnectTimer = null, demoReconnectAttempt = 0;
+let demoReconnectEnabled = false, demoManualClose = false, demoConnecting = false;
 const demoTrades = JSON.parse(localStorage.getItem("deriv_demo_trades") || "[]");
 const demoByReq = new Map(), demoByContract = new Map();
 const demoPendingAssets = new Set();
@@ -485,11 +495,75 @@ async function loadAccounts(){
     syncDemoConnectButton();
   }catch(err){log(`AUTH: ${err.message}`);}
 }
-async function connectSelectedAccount(){
+function clearDemoReconnectTimer(){ if(demoReconnectTimer){clearTimeout(demoReconnectTimer);demoReconnectTimer=null;} }
+function stopDemoHeartbeat(){
+  if(demoHeartbeatTimer){clearInterval(demoHeartbeatTimer);demoHeartbeatTimer=null;}
+  if(demoPingTimeout){clearTimeout(demoPingTimeout);demoPingTimeout=null;}
+}
+function markDemoHeartbeat(ok,rtt=null){
+  demoLastPongAt=Date.now();
+  const hb=$("demoHeartbeat");
+  if(hb) hb.textContent=ok?`Heartbeat : OK${Number.isFinite(rtt)?` · ${rtt} ms`:""}`:"Heartbeat : perdu → reconnexion";
+}
+function sendDemoPing(){
+  if(!demoWs || demoWs.readyState!==WebSocket.OPEN || !demoConnected) return;
+  const sentAt=Date.now();
+  const req=demoSend({ping:1});
+  if(!req) return;
+  demoLastPingReqId=req;
+  demoWs.__lastPingAt=sentAt;
+  if(demoPingTimeout) clearTimeout(demoPingTimeout);
+  demoPingTimeout=setTimeout(()=>{
+    demoPingTimeout=null;
+    const age=Date.now()-demoLastPongAt;
+    if(age>=DEMO_PING_TIMEOUT_MS){
+      markDemoHeartbeat(false);
+      log(`EXECUTION: ping sans réponse depuis ${Math.round(age/1000)}s → reconnexion.`);
+      try{demoWs.close(4001,"heartbeat timeout")}catch{}
+    }
+  },DEMO_PING_TIMEOUT_MS);
+}
+function startDemoHeartbeat(){
+  stopDemoHeartbeat();
+  demoLastPongAt=Date.now();
+  const hb=$("demoHeartbeat"); if(hb) hb.textContent="Heartbeat : initialisation…";
+  sendDemoPing();
+  demoHeartbeatTimer=setInterval(sendDemoPing,DEMO_HEARTBEAT_MS);
+}
+function scheduleDemoReconnect(reason="déconnexion inattendue"){
+  if(!demoReconnectEnabled || demoManualClose || !demoAccountId || !demoToken) return;
+  if(demoReconnectTimer || demoConnecting || demoConnected) return;
+  const exp=Math.min(demoReconnectAttempt,5);
+  const delay=Math.min(DEMO_RECONNECT_MAX_MS,DEMO_RECONNECT_BASE_MS*Math.pow(2,exp))+Math.floor(Math.random()*DEMO_RECONNECT_JITTER_MS);
+  demoReconnectAttempt++;
+  setDemoConn(`RECONNEXION… ${Math.round(delay/1000)}s`);
+  log(`EXECUTION: reconnexion automatique #${demoReconnectAttempt} dans ${Math.round(delay/1000)}s · ${reason}.`);
+  demoReconnectTimer=setTimeout(()=>{demoReconnectTimer=null;connectSelectedAccount({isReconnect:true}).catch(()=>{});},delay);
+}
+function noteDemoPong(ev){
+  let d; try{d=JSON.parse(ev.data)}catch{return false;}
+  const echoId=Number(d?.echo_req?.req_id||0);
+  const isPingResponse=d?.echo_req?.ping===1 || d?.msg_type==="ping" || (d?.ping!==undefined && (!echoId || echoId===demoLastPingReqId));
+  if(!isPingResponse) return false;
+  const now=Date.now();
+  const pingAt=demoWs?.__lastPingAt||now;
+  const rtt=Math.max(0,now-pingAt);
+  if(demoPingTimeout){clearTimeout(demoPingTimeout);demoPingTimeout=null;}
+  markDemoHeartbeat(true,rtt);
+  return true;
+}
+
+async function connectSelectedAccount(options={}){
+  const isReconnect=!!options.isReconnect;
   if(!demoAccountId){log("AUTH: sélectionne d’abord un compte.");return;}
   demoToken=$("demoToken").value.trim(); demoAppId=$("demoAppId").value.trim();
   if(!demoToken){log("AUTH: renseigne le PAT.");return;}
   if(executionMode==="real" && !realModeUnlocked){log("MODE RÉEL: déverrouillage requis.");return;}
+  if(demoConnecting) return;
+  demoConnecting=true;
+  demoManualClose=false;
+  demoReconnectEnabled=true;
+  if(isReconnect) log("EXECUTION: tentative de reconnexion authentifiée…");
   try{
     setDemoConn("AUTHENTIFICATION…");
     const headers={"Authorization":`Bearer ${demoToken}`};
@@ -502,14 +576,53 @@ async function connectSelectedAccount(){
     if(!url.includes(expected)) throw new Error(`VERROU: l’OTP ne renvoie pas l’environnement ${executionMode}. Connexion refusée.`);
     demoWs=new WebSocket(url);
     demoWs.onopen=()=>{
-      demoConnected=true;setDemoConn(executionMode==="demo"?"CONNECTÉ DÉMO":"CONNECTÉ RÉEL",true);$("demoDisconnect").disabled=false;$("demoConnectSelected").disabled=true;$("demoAuto").disabled=false;$("demoAuto").textContent=executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL";log(`EXECUTION: /ws/${executionMode} connecté · compte ${demoAccountId}.`);demoSend({balance:1,subscribe:1});
+      demoConnecting=false;
+      demoConnected=true;
+      demoReconnectAttempt=0;
+      clearDemoReconnectTimer();
+      setDemoConn(executionMode==="demo"?"CONNECTÉ DÉMO":"CONNECTÉ RÉEL",true);
+      $("demoDisconnect").disabled=false;
+      $("demoConnectSelected").disabled=true;
+      $("demoAuto").disabled=false;
+      $("demoAuto").textContent=demoAuto?(executionMode==="demo"?"⏸ Désactiver AUTO-DÉMO":"⏸ Désactiver AUTO-RÉEL"):(executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL");
+      log(`EXECUTION: /ws/${executionMode} connecté · compte ${demoAccountId}.`);
+      demoSend({balance:1,subscribe:1});
+      startDemoHeartbeat();
+      for(const trade of demoTrades.filter(t=>t.status==="OPEN" && t.contractId && (t.mode||"demo")===executionMode)){
+        demoByContract.set(String(trade.contractId),trade);
+        demoSend({proposal_open_contract:1,contract_id:trade.contractId,subscribe:1});
+      }
+      if(isReconnect) log(`EXECUTION: reconnexion réussie · ${countOpenDemo()} contrat(s) ouverts re-souscrits.`);
     };
-    demoWs.onclose=(ev)=>{demoConnected=false;demoAuto=false;$("demoDisconnect").disabled=true;$("demoAuto").disabled=true;setDemoConn("DÉCONNECTÉ");log(`EXECUTION: déconnexion code=${ev.code} reason=${ev.reason||"(aucune)"}`);renderDemoTrades();};
-    demoWs.onerror=()=>{setDemoConn("ERREUR",false);log(`EXECUTION: erreur WebSocket ${executionMode}.`);};
+    demoWs.onclose=(ev)=>{
+      const intentional=demoManualClose;
+      stopDemoHeartbeat();
+      demoConnected=false;
+      demoConnecting=false;
+      $("demoDisconnect").disabled=true;
+      $("demoAuto").disabled=true;
+      setDemoConn(intentional?"NON CONNECTÉ":"RECONNEXION…",false);
+      const hb=$("demoHeartbeat"); if(hb) hb.textContent=intentional?"Heartbeat : arrêté":"Heartbeat : perdu → reconnexion";
+      log(`EXECUTION: déconnexion code=${ev.code} reason=${ev.reason||"(aucune)"} clean=${ev.wasClean}`);
+      renderDemoTrades();
+      if(!intentional) scheduleDemoReconnect(ev.reason||`code ${ev.code}`);
+    };
+    demoWs.onerror=()=>{
+      setDemoConn("ERREUR",false);
+      log(`EXECUTION: erreur WebSocket ${executionMode} · reconnexion surveillée.`);
+    };
     demoWs.onmessage=handleExecutionMessage;
-  }catch(err){demoConnected=false;setDemoConn("ERREUR",false);log(`EXECUTION: ${err.message}`);}
+  }catch(err){
+    demoConnected=false;
+    demoConnecting=false;
+    stopDemoHeartbeat();
+    setDemoConn("ERREUR",false);
+    log(`EXECUTION: ${err.message}`);
+    scheduleDemoReconnect(err.message);
+  }
 }
 function handleExecutionMessage(ev){
+  if(noteDemoPong(ev)) return;
   let d;try{d=JSON.parse(ev.data)}catch{return}
   if(d.error){const meta=demoByReq.get(d.echo_req?.req_id);if(meta){demoPendingAssets.delete(meta.asset);demoByReq.delete(d.echo_req.req_id);}log(`EXECUTION API error: ${d.error.message||"inconnue"}`);return;}
   if(d.msg_type==="balance"){
@@ -540,7 +653,29 @@ function handleExecutionMessage(ev){
     const c=d.proposal_open_contract,trade=demoByContract.get(String(c?.contract_id));if(!trade)return;const status=String(c.status||"").toLowerCase(),done=(c.is_sold===1||["won","lost","sold","expired"].includes(status));if(done){trade.status="CLOSED";trade.result=status==="won"||Number(c.profit)>0?"WIN":status==="lost"||Number(c.profit)<0?"LOSS":"VOID";trade.profit=Number(c.profit);trade.exit=Number(c.exit_spot);trade.exitTime=c.exit_spot_time||Date.now()/1000;const ctx=assets.get(trade.asset);if(ctx)ctx.demoOpen=false;demoByContract.delete(String(c.contract_id));saveDemoTrades();renderDemoTrades();log(`${trade.mode.toUpperCase()} ${trade.asset}: #${trade.contractId} → ${trade.result} · ${Number.isFinite(trade.profit)?trade.profit.toFixed(2):"—"} ${trade.currency}`);}
   }
 }
-function disconnectDemo(){ demoAuto=false; demoPendingAssets.clear(); demoByReq.clear(); if(demoWs){try{demoWs.close()}catch{}} demoWs=null; demoConnected=false; demoToken=""; demoAccountId=""; setDemoConn("NON CONNECTÉ"); $("demoAuto").disabled=true; $("demoDisconnect").disabled=true; $("demoConnectSelected").disabled=true; $("demoAuto").textContent="▶ Activer AUTO"; demoBalanceValue=null; demoCurrency="—"; $("demoBalance").textContent="—"; $("demoStake").textContent="—"; }
+function disconnectDemo(){
+  demoAuto=false;
+  demoReconnectEnabled=false;
+  demoManualClose=true;
+  clearDemoReconnectTimer();
+  stopDemoHeartbeat();
+  demoPendingAssets.clear();
+  demoByReq.clear();
+  if(demoWs){try{demoWs.close(1000,"manual disconnect")}catch{}}
+  demoWs=null;
+  demoConnected=false;
+  demoConnecting=false;
+  demoAccountId="";
+  setDemoConn("NON CONNECTÉ");
+  const hb=$("demoHeartbeat"); if(hb) hb.textContent="Heartbeat : arrêté";
+  $("demoAuto").disabled=true;
+  $("demoDisconnect").disabled=true;
+  $("demoConnectSelected").disabled=true;
+  $("demoAuto").textContent="▶ Activer AUTO";
+  demoBalanceValue=null; demoCurrency="—";
+  $("demoBalance").textContent="—"; $("demoStake").textContent="—";
+}
+
 function prepareDemoConnection(){
   const demo=discoveredAccounts.find(x=>x.type==="demo");
   if(!demo){ log("DÉMO: aucun compte démo détecté. Clique d’abord sur « Détecter mes comptes »." ); return; }
