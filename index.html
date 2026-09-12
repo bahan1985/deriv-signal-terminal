@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Deriv Signal Terminal V2.8</title>
+  <title>Deriv Signal Terminal V3.3 V2.8</title>
   <style>
     :root{--bg:#07111f;--panel:#0d1b2d;--panel2:#101f33;--line:#20344d;--txt:#e8eef7;--muted:#8fa4bd;--green:#25d17d;--red:#ff5d6c;--yellow:#f5c451;--blue:#55a7ff}
     *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#06101c,#09192b);color:var(--txt);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -678,8 +678,8 @@ function handleExecutionMessage(ev){
       if(meta.type==="emergencySell") {
         log(`GARDE-FOU: clôture refusée pour #${meta.trade?.contractId||"?"} · ${errCode} · ${errMsg}`);
       } else {
-        demoLastDecision=`REFUS — ${meta.asset||"?"} · ${errCode}`;
-        log(`AUTO ${meta.asset||"?"}: ${meta.stage||"proposition/achat"} refusé par Deriv · ${errCode} · ${errMsg}`);
+        demoLastDecision=`REFUS ${meta.stage||"API"} — ${meta.asset||"?"} · ${errCode} · ${errMsg}`;
+        log(`🔴 AUTO ${meta.asset||"?"}: ÉTAPE=${meta.stage||meta.type||"API"} · CODE=${errCode} · MESSAGE=${errMsg} · REQ_ID=${reqId}`);
         renderDemoTrades();
       }
     }else{
@@ -703,7 +703,7 @@ function handleExecutionMessage(ev){
       renderDemoTrades();
       return;
     }
-    log(`AUTO ${meta.asset}: pré-check OK · ${wanted} disponible · lancement PROPOSITION ${meta.expiry} ticks.`);
+    log(`✓ ${meta.asset}: CONTRACTS_FOR OK · ${wanted} disponible · expiration demandée ${meta.expiry} ticks.`);
     const req=demoSend({proposal:1,amount:meta.stake,basis:"stake",contract_type:meta.dir,currency:demoCurrency,duration_unit:"t",duration:meta.expiry,underlying_symbol:meta.asset});
     if(!req){demoPendingAssets.delete(meta.asset);demoLastDecision=`ÉCHEC PROPOSITION — ${meta.asset}`;log(`AUTO ${meta.asset}: envoi PROPOSITION impossible.`);renderDemoTrades();return;}
     demoByReq.set(req,{...meta,type:"proposal",stage:"PROPOSITION"});
@@ -721,7 +721,8 @@ function handleExecutionMessage(ev){
     const proposalDuration=Number(d.proposal?.duration);
     const proposalUnit=String(d.proposal?.duration_unit||"").toLowerCase();
     const proposalCurrency=String(d.proposal?.currency||demoCurrency);
-    if(!id||!Number.isFinite(ask)){demoPendingAssets.delete(meta.asset);log(`EXECUTION ${meta.asset}: proposition invalide.`);return;}
+    if(!id||!Number.isFinite(ask)){demoPendingAssets.delete(meta.asset);demoLastDecision=`REFUS PROPOSITION — ${meta.asset} · réponse invalide`;log(`🔴 ${meta.asset}: PROPOSITION invalide · id=${id||"absent"} · ask_price=${d.proposal?.ask_price??"absent"}`);renderDemoTrades();return;}
+    log(`✓ ${meta.asset}: PROPOSITION OK · ID=${id} · ASK=${ask.toFixed(2)} ${demoCurrency} · ${meta.dir} ${meta.expiry}t`);
     if(proposalSymbol && proposalSymbol!==meta.asset){demoPendingAssets.delete(meta.asset);log(`EXECUTION ${meta.asset}: actif incohérent. Achat refusé.`);return;}
     if(proposalDir && proposalDir!==meta.dir){demoPendingAssets.delete(meta.asset);log(`EXECUTION ${meta.asset}: direction incohérente. Achat refusé.`);return;}
     if(proposalDuration && proposalDuration!==meta.expiry){demoPendingAssets.delete(meta.asset);log(`EXECUTION ${meta.asset}: expiration incohérente. Achat refusé.`);return;}
@@ -729,7 +730,7 @@ function handleExecutionMessage(ev){
     if(proposalCurrency!==demoCurrency){demoPendingAssets.delete(meta.asset);log(`EXECUTION ${meta.asset}: devise incohérente. Achat refusé.`);return;}
     if(ask>meta.stake){demoPendingAssets.delete(meta.asset);log(`${executionMode.toUpperCase()} ${meta.asset}: prix ${ask.toFixed(2)} > plafond ${meta.stake.toFixed(2)}. Achat refusé.`);return;}
     demoLastDecision=`ACHAT EN COURS — ${meta.asset} ${meta.dir} ${meta.expiry}t`;
-    const buyReq=demoSend({buy:id,price:ask});if(!buyReq){demoPendingAssets.delete(meta.asset);demoLastDecision=`ÉCHEC ENVOI — ${meta.asset}`;log(`EXECUTION ${meta.asset}: envoi achat impossible.`);renderDemoTrades();return;}demoByReq.set(buyReq,{...meta,proposalId:id,ask});log(`${executionMode.toUpperCase()} ${meta.asset}: proposition validée → BUY envoyé · ${meta.dir} ${meta.expiry}t · ${ask.toFixed(2)} ${demoCurrency}`);renderDemoTrades();
+    const buyReq=demoSend({buy:id,price:ask});if(!buyReq){demoPendingAssets.delete(meta.asset);demoLastDecision=`ÉCHEC ENVOI — ${meta.asset}`;log(`EXECUTION ${meta.asset}: envoi achat impossible.`);renderDemoTrades();return;}demoByReq.set(buyReq,{...meta,type:"buy",stage:"BUY",proposalId:id,ask});log(`🟠 ${executionMode.toUpperCase()} ${meta.asset}: BUY ENVOYÉ · proposal_id=${id} · plafond=${ask.toFixed(2)} ${demoCurrency} · ${meta.dir} ${meta.expiry}t`);renderDemoTrades();
   }
   if(d.msg_type==="sell"){
     const meta=demoByReq.get(d.echo_req?.req_id); if(meta?.type==="emergencySell"){
@@ -756,7 +757,7 @@ function handleExecutionMessage(ev){
     const ctx=assets.get(meta.asset);if(ctx)ctx.demoOpen=true;
     demoLastDecision=`POSITION OUVERTE — ${meta.asset} ${meta.dir} ${meta.expiry}t`;
     saveDemoTrades();renderDemoTrades();
-    log(`🟢 ${executionMode.toUpperCase()} ${meta.asset}: CONTRAT ACHETÉ #${b.contract_id} · ${meta.dir} · ${meta.expiry} ticks · mise ${trade.stake.toFixed(2)} ${trade.currency}`);
+    log(`🟢 ${executionMode.toUpperCase()} ${meta.asset}: POSITION OUVERTE CONFIRMÉE · contract_id=${b.contract_id} · transaction_id=${b.transaction_id||"—"} · ${meta.dir} · ${meta.expiry} ticks · mise ${trade.stake.toFixed(2)} ${trade.currency}`);
     demoSend({proposal_open_contract:1,contract_id:b.contract_id,subscribe:1});
   }
   if(d.msg_type==="proposal_open_contract"){
