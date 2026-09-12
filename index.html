@@ -670,23 +670,47 @@ function handleExecutionMessage(ev){
   if(d.error){
     const reqId=d.echo_req?.req_id;
     const meta=demoByReq.get(reqId);
+    const errCode=String(d.error.code||"UNKNOWN_ERROR");
+    const errMsg=String(d.error.message||"erreur inconnue");
     if(meta){
       if(meta.asset) demoPendingAssets.delete(meta.asset);
       demoByReq.delete(reqId);
       if(meta.type==="emergencySell") {
-        log(`GARDE-FOU: clôture refusée pour #${meta.trade?.contractId||"?"} · ${d.error.message||"erreur inconnue"}`);
+        log(`GARDE-FOU: clôture refusée pour #${meta.trade?.contractId||"?"} · ${errCode} · ${errMsg}`);
       } else {
-        demoLastDecision=`REFUS — ${meta.asset||"?"}`;
-        log(`AUTO ${meta.asset||"?"}: proposition/achat refusé par Deriv · ${d.error.message||"erreur inconnue"}`);
+        demoLastDecision=`REFUS — ${meta.asset||"?"} · ${errCode}`;
+        log(`AUTO ${meta.asset||"?"}: ${meta.stage||"proposition/achat"} refusé par Deriv · ${errCode} · ${errMsg}`);
         renderDemoTrades();
       }
     }else{
-      log(`EXECUTION API error: ${d.error.message||"inconnue"}`);
+      log(`EXECUTION API error · ${errCode} · ${errMsg}`);
     }
     return;
   }
   if(d.msg_type==="balance"){
     demoBalanceValue=Number(d.balance?.balance);demoCurrency=d.balance?.currency||"—";$('demoBalance').textContent=Number.isFinite(demoBalanceValue)?`${demoBalanceValue.toFixed(2)} ${demoCurrency}`:"—";$('demoStake').textContent=Number.isFinite(demoBalanceValue)?`${(demoBalanceValue*DEMO_STAKE_PCT).toFixed(2)} ${demoCurrency}`:"—";
+  }
+  if(d.msg_type==="contracts_for"){
+    const meta=demoByReq.get(d.echo_req?.req_id);if(!meta||meta.type!=="contractsFor")return;
+    demoByReq.delete(d.echo_req.req_id);
+    const available=Array.isArray(d.contracts_for?.available)?d.contracts_for.available:[];
+    const wanted=String(meta.dir||"").toUpperCase();
+    const match=available.find(c=>String(c?.contract_type||"").toUpperCase()===wanted);
+    if(!match){
+      demoPendingAssets.delete(meta.asset);
+      demoLastDecision=`NON DISPONIBLE — ${meta.asset} ${wanted}`;
+      log(`AUTO ${meta.asset}: contrat ${wanted} non disponible selon contracts_for · aucun BUY envoyé.`);
+      renderDemoTrades();
+      return;
+    }
+    log(`AUTO ${meta.asset}: pré-check OK · ${wanted} disponible · lancement PROPOSITION ${meta.expiry} ticks.`);
+    const req=demoSend({proposal:1,amount:meta.stake,basis:"stake",contract_type:meta.dir,currency:demoCurrency,duration_unit:"t",duration:meta.expiry,underlying_symbol:meta.asset});
+    if(!req){demoPendingAssets.delete(meta.asset);demoLastDecision=`ÉCHEC PROPOSITION — ${meta.asset}`;log(`AUTO ${meta.asset}: envoi PROPOSITION impossible.`);renderDemoTrades();return;}
+    demoByReq.set(req,{...meta,type:"proposal",stage:"PROPOSITION"});
+    demoLastDecision=`PROPOSITION ENVOYÉE — ${meta.asset}`;
+    log(`🟡 AUTO-${executionMode.toUpperCase()} ${meta.asset}: PROPOSITION → ${meta.dir} ${meta.expiry} ticks · ${meta.stake.toFixed(2)} ${demoCurrency}`);
+    renderDemoTrades();
+    return;
   }
   if(d.msg_type==="proposal"){
     const meta=demoByReq.get(d.echo_req?.req_id);if(!meta)return;
@@ -917,13 +941,13 @@ async function requestDemoTrade(ctx,sig){
   }
   const stake=Math.max(0,demoBalanceValue*DEMO_STAKE_PCT);
   if(!Number.isFinite(stake)||stake<=0){demoLastDecision="REFUSÉ — solde invalide";return;}
-  const req=demoSend({proposal:1,amount:stake,basis:"stake",contract_type:sig.dir,currency:demoCurrency,duration_unit:"t",duration:sig.expiry,underlying_symbol:ctx.symbol});
-  if(!req){demoLastDecision=`ÉCHEC PROPOSITION — ${ctx.symbol}`;return;}
-  const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,createdAt:Date.now()};
+  const meta={asset:ctx.symbol,dir:sig.dir,score:sig.score,expiry:sig.expiry,stake,createdAt:Date.now(),type:"contractsFor",stage:"PRÉ-CHECK"};
   demoPendingAssets.add(ctx.symbol);
+  const req=demoSend({contracts_for:ctx.symbol});
+  if(!req){demoPendingAssets.delete(ctx.symbol);demoLastDecision=`ÉCHEC PRÉ-CHECK — ${ctx.symbol}`;log(`AUTO ${ctx.symbol}: envoi contracts_for impossible.`);return;}
   demoByReq.set(req,meta);
-  demoLastDecision=`PROPOSITION ENVOYÉE — ${ctx.symbol}`;
-  log(`🟡 AUTO-${executionMode.toUpperCase()} ${ctx.symbol}: PROPOSITION → ${sig.dir} ${sig.expiry} ticks · mise ${stake.toFixed(2)} ${demoCurrency} · score ${sig.score}/100`);
+  demoLastDecision=`VÉRIFICATION CONTRAT — ${ctx.symbol}`;
+  log(`🔎 AUTO-${executionMode.toUpperCase()} ${ctx.symbol}: vérification disponibilité ${sig.dir} ${sig.expiry} ticks avant PROPOSITION · score ${sig.score}/100`);
   renderDemoTrades();
 }
 
