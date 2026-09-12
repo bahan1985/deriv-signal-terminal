@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Deriv Signal Terminal V3.3 V2.8</title>
+  <title>Deriv Signal Terminal V4.0 — Research First</title>
   <style>
     :root{--bg:#07111f;--panel:#0d1b2d;--panel2:#101f33;--line:#20344d;--txt:#e8eef7;--muted:#8fa4bd;--green:#25d17d;--red:#ff5d6c;--yellow:#f5c451;--blue:#55a7ff}
     *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#06101c,#09192b);color:var(--txt);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -24,7 +24,7 @@
 </head>
 <body>
 <header>
-  <div><h1>Deriv Signal Terminal</h1><div class="sub">Multi-actifs · tick-by-tick · signaux manuels CALL / PUT · AUTO-DÉMO à 0,5% du capital · AUTO seuil 85/100 · taux actif ≥50% · martingale ×1,7 après perte · coupe-risque ±10%</div></div>
+  <div><h1>Deriv Signal Terminal</h1><div class="sub">Recherche d’abord · historique persistant · AUTO-TRADER séparé · score ≥85 · actifs FOCUS uniquement · coupe-risque ±10%</div></div>
   <div class="status"><span id="dot" class="dot"></span><span id="connection">Déconnecté</span></div>
 </header>
 <main>
@@ -35,9 +35,32 @@
     <button class="btn warn" id="clear">Effacer l'historique local</button>
   </div>
 
+  <section class="hero" id="researchPanel" style="border-color:#2f7d58;background:linear-gradient(135deg,#0b2a1d,#0b1727)">
+    <div class="hero-title">🧪 PHASE RECHERCHE — historique AVANT AUTO-TRADER</div>
+    <div class="sub" style="margin-bottom:10px">
+      Le terminal conserve les résultats WIN/LOSS par actif, direction, score et expiration.
+      L’AUTO-TRADER reste verrouillé tant qu’aucun actif n’a démontré un avantage statistique suffisant.
+    </div>
+    <div class="hero-grid">
+      <div class="hero-item"><small>Résultats observés</small><b id="researchTotal">0</b></div>
+      <div class="hero-item"><small>Actifs ≥ 50 résultats</small><b id="researchAssets">0</b></div>
+      <div class="hero-item"><small>FOCUS validés</small><b id="researchFocus">0</b></div>
+      <div class="hero-item"><small>AUTO-TRADER</small><b id="researchAutoGate" class="warntxt">BLOQUÉ — accumulation</b></div>
+    </div>
+    <div class="demo-actions">
+      <button class="btn" id="exportHistory">⬇ Exporter historique JSON</button>
+      <button class="btn" id="exportHistoryCsv">⬇ Exporter résultats CSV</button>
+      <button class="btn warn" id="clearResearch">🗑 Effacer l’historique observé</button>
+    </div>
+    <div class="demo-lock">
+      Règle AUTO : score ≥85 + Top 5 statistique + ≥50 résultats actif + ≥20 résultats setup
+      + WR setup ≥62% + borne Wilson ≥55%. Les données historiques observées sont séparées des données de marché.
+    </div>
+  </section>
+
   <section class="demo-panel">
     <div class="demo-title">🧪 EXÉCUTION AUTOMATIQUE — DÉMO par défaut, RÉEL verrouillé</div>
-    <div class="demo-sub"><b>AUTO-DÉMO = prise de position réelle sur le compte DÉMO.</b> Une recommandation techniquement exploitable (score ≥ 85) sur un actif ayant au moins 50% de taux observé historique déclenche automatiquement PROPOSITION → BUY → contrat ouvert → suivi jusqu’à expiration. Le token reste uniquement en mémoire dans cette page.</div>
+    <div class="demo-sub"><b>AUTO-DÉMO = prise de position réelle sur le compte DÉMO.</b> L’AUTO-TRADER est séparé du scanner et reste verrouillé tant que les critères historiques ne sont pas validés. Une fois déverrouillé, seuls les actifs FOCUS du Top 5 statistique, avec score ≥85, déclenchent PROPOSITION → BUY → contrat ouvert → suivi jusqu’à expiration. Le token reste uniquement en mémoire dans cette page.</div>
     <div class="demo-grid">
       <input class="demo-input" id="demoAppId" placeholder="Deriv App ID" autocomplete="off">
       <input class="demo-input" id="demoToken" type="password" placeholder="Personal Access Token (PAT)" autocomplete="off">
@@ -45,7 +68,7 @@
     <div class="demo-actions">
       <button class="btn" id="demoLoadAccounts">🔎 Détecter mes comptes</button>
       <button class="btn" id="demoDisconnect" disabled>Déconnecter</button>
-      <button class="btn primary" id="demoAuto" disabled>▶ Activer AUTO-DÉMO</button>
+      <button class="btn primary" id="demoAuto" disabled>🔒 AUTO-TRADER verrouillé</button>
       <button class="btn warn" id="demoStop">🛑 STOP AUTO</button>
     </div>
     <div id="accountChooser" class="demo-account-chooser" style="display:none">
@@ -161,6 +184,12 @@ const FOCUS_MIN_WINRATE = 62;
 const FOCUS_MIN_LOWER = 55;
 const MAX_FOCUS = 5;
 const MAX_RECOMMENDATIONS = 8;
+const AUTO_HISTORY_MIN_ASSET = 50;
+const AUTO_HISTORY_MIN_SETUP = 20;
+const AUTO_HISTORY_MIN_WR = 62;
+const AUTO_HISTORY_MIN_LOWER = 55;
+const AUTO_TOP_ASSETS = 5;
+let autoResearchReady = false;
 const DEMO_STAKE_PCT = 0.005; // Base = 0,5% du solde au moment de l'entrée.
 const DEMO_MIN_SCORE = 85; // AUTO-DÉMO strict : seules les recommandations >= 85/100 sont exécutées.
 const DEMO_MIN_ASSET_WR = 50; // L'actif doit avoir un taux observé historique >= 50% avant toute entrée AUTO.
@@ -455,15 +484,30 @@ function renderRiskGuard(){
   pnl.textContent=`${pnlVal>=0?"+":""}${pnlVal.toFixed(2)} ${demoCurrency}`;
   panel.classList.toggle("triggered",demoRiskTriggered);
 }
+function autoResearchCandidates(){
+  return [...assets.values()]
+    .map(ctx=>opportunityData(ctx))
+    .filter(Boolean)
+    .filter(x=>focusEligible(x))
+    .sort((a,b)=>b.rank-a.rank)
+    .slice(0,AUTO_TOP_ASSETS);
+}
 function autoDemoEligibilityReason(ctx,a){
-  if(!demoAuto) return "AUTO désactivé";
+  if(!demoAuto) return "AUTO-TRADER désactivé";
   if(!demoConnected) return "compte démo non connecté";
   if(!a || a.dir==="NONE" || !a.expiry) return "aucun signal exploitable";
   if(a.score<DEMO_MIN_SCORE) return `score ${a.score}/100 < seuil AUTO ${DEMO_MIN_SCORE}`;
-  const hist=assetStats(ctx.symbol);
-  if(hist.n<DEMO_MIN_ASSET_SAMPLE) return `historique actif insuffisant (${hist.n}/${DEMO_MIN_ASSET_SAMPLE})`;
-  if(hist.wr<DEMO_MIN_ASSET_WR) return `taux actif ${hist.wr.toFixed(1)}% < minimum ${DEMO_MIN_ASSET_WR}%`;
-  if(a.createdEpoch!=null && ctx.pending?.some(s=>s.createdEpoch===a.createdEpoch)) return "signal déjà en suivi";
+  const x=opportunityData(ctx);
+  if(!x) return "opportunité indisponible";
+  const top=autoResearchCandidates();
+  if(!top.some(y=>y.ctx.symbol===x.ctx.symbol && y.a.dir===x.a.dir))
+    return "actif/setup hors Top statistique AUTO";
+  if(x.as.n<AUTO_HISTORY_MIN_ASSET) return `historique actif insuffisant (${x.as.n}/${AUTO_HISTORY_MIN_ASSET})`;
+  if(x.n<AUTO_HISTORY_MIN_SETUP) return `historique setup insuffisant (${x.n}/${AUTO_HISTORY_MIN_SETUP})`;
+  if(x.empirical==null || x.empirical<AUTO_HISTORY_MIN_WR)
+    return `WR setup ${x.empirical==null?"—":x.empirical.toFixed(1)+"%"} < ${AUTO_HISTORY_MIN_WR}%`;
+  if(x.lower==null || x.lower<AUTO_HISTORY_MIN_LOWER)
+    return `borne Wilson ${x.lower==null?"—":x.lower.toFixed(1)+"%"} < ${AUTO_HISTORY_MIN_LOWER}%`;
   if(ctx.demoOpen) return "position déjà ouverte sur cet actif";
   if(demoPendingAssets.has(ctx.symbol)) return "proposition déjà en attente";
   if(countOpenDemo()>=DEMO_MAX_CONCURRENT) return `maximum simultané atteint (${DEMO_MAX_CONCURRENT})`;
@@ -859,6 +903,11 @@ function triggerAutoForCurrentSignals(){
 
 function toggleDemoAuto(){
   if(!demoConnected){log("AUTO: connecte d’abord le compte sélectionné.");return;}
+  if(!demoAuto && !autoResearchReady){
+    log("AUTO-TRADER BLOQUÉ : aucun actif ne remplit encore les critères historiques requis.");
+    render();
+    return;
+  }
   if(!demoAuto){
     if(executionMode==="real"){
       const answer=prompt(`ACTIVER AUTO-RÉEL ?\n\nCompte réel : ${demoAccountId}\nMise : ${(demoBalanceValue*DEMO_STAKE_PCT).toFixed(2)} ${demoCurrency}\n\nTape exactement : ${REAL_MODE_UNLOCK_TEXT}`);
@@ -1165,6 +1214,70 @@ function renderTables(arr){
   $('expiryTable').innerHTML=expiryRows.length?expiryRows.slice(0,10).map(x=>`<tr><td><b>${x.x.ctx.symbol}</b></td><td><span class="badge ${x.x.a.dir.toLowerCase()}">${x.x.a.dir}</span></td><td><b>${x.e} ticks</b></td><td><b>${x.v.wr.toFixed(1)}%</b></td><td>${x.v.n}</td><td>${x.v.n>=MIN_RECOMMEND_SAMPLE?'VALIDÉE':'LIMITÉE'}</td></tr>`).join(''):'<tr><td colspan="6" class="muted">Il faut au moins 5 résultats non-VOID pour commencer à comparer les expirations.</td></tr>';
 }
 
+function updateResearchUI(){
+  const total=outcomes.filter(x=>x.result==="WIN"||x.result==="LOSS").length;
+  const readyAssets=[...assets.values()].filter(c=>assetStats(c.symbol).n>=AUTO_HISTORY_MIN_ASSET).length;
+  const focus=autoResearchCandidates();
+  autoResearchReady=focus.length>0;
+  if($("researchTotal")) $("researchTotal").textContent=total;
+  if($("researchAssets")) $("researchAssets").textContent=readyAssets;
+  if($("researchFocus")) $("researchFocus").textContent=focus.length;
+  if($("researchAutoGate")){
+    $("researchAutoGate").textContent=autoResearchReady?`PRÊT — ${focus.length} actif(s) FOCUS`:"BLOQUÉ — accumulation";
+    $("researchAutoGate").className=autoResearchReady?"oktxt":"warntxt";
+  }
+  const btn=$("demoAuto");
+  if(btn){
+    if(demoAuto){
+      btn.disabled=!demoConnected;
+      btn.textContent=executionMode==="demo"?"⏸ Désactiver AUTO-DÉMO":"⏸ Désactiver AUTO-RÉEL";
+    }else{
+      btn.disabled=!demoConnected || !autoResearchReady;
+      btn.textContent=autoResearchReady
+        ? (executionMode==="demo"?"▶ Activer AUTO-DÉMO":"▶ Activer AUTO-RÉEL")
+        : "🔒 AUTO-TRADER verrouillé";
+    }
+  }
+}
+function exportHistoryJson(){
+  const payload={
+    version:"V4.0",
+    exportedAt:new Date().toISOString(),
+    rules:{
+      scoreMin:DEMO_MIN_SCORE,
+      assetMin:AUTO_HISTORY_MIN_ASSET,
+      setupMin:AUTO_HISTORY_MIN_SETUP,
+      setupWinRateMin:AUTO_HISTORY_MIN_WR,
+      wilsonMin:AUTO_HISTORY_MIN_LOWER,
+      topAssets:AUTO_TOP_ASSETS
+    },
+    observedOutcomes:outcomes,
+    autoTrades:demoTrades
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="deriv-terminal-history-v4.json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function exportHistoryCsv(){
+  const cols=["asset","dir","score","expiry","entry","exit","result","createdEpoch","exitEpoch","settledAt"];
+  const esc=v=>`"${String(v??"").replaceAll('"','""')}"`;
+  const csv=[cols.join(","),...outcomes.map(r=>cols.map(c=>esc(r[c])).join(","))].join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="deriv-terminal-history-v4.csv"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function clearObservedHistory(){
+  if(!confirm("Effacer les résultats observés WIN/LOSS et repartir de zéro ?")) return;
+  outcomes.length=0;
+  localStorage.removeItem("deriv_signal_outcomes");
+  for(const c of assets.values()){c.pending=[];c.signal=null}
+  autoResearchReady=false;
+  render();
+  log("Historique observé effacé. AUTO-TRADER rebloqué.");
+}
+
 function render(){
   const arr=[...assets.values()].sort((a,b)=>(b.analysis?.score||0)-(a.analysis?.score||0));
   $("nAssets").textContent=arr.length;
@@ -1172,6 +1285,7 @@ function render(){
   const wins=outcomes.filter(x=>x.result==="WIN").length, losses=outcomes.filter(x=>x.result==="LOSS").length;
   $("wins").textContent=wins;$("losses").textContent=losses;$("wr").textContent=(wins+losses)?`${(wins/(wins+losses)*100).toFixed(1)}%`:"—";
   renderTables(arr);
+  updateResearchUI();
   if(!arr.length){$("cards").innerHTML='<div class="empty">Aucun actif synthétique détecté.</div>';return;}
   $("cards").innerHTML=arr.map(ctx=>{
     const a=ctx.analysis||{dir:"NONE",score:0,trend:"NEUTRAL",reason:"En attente…"};
@@ -1239,7 +1353,10 @@ function connect(){
 $("start").onclick=()=>{ $("start").disabled=true;$("stop").disabled=false; connect(); };
 $("stop").onclick=()=>{running=false;if(ws)ws.close();$("start").disabled=false;$("stop").disabled=true; const el=$("scannerConn"); if(el) el.textContent="ARRÊTÉ";};
 $("refresh").onclick=()=>{if(ws&&ws.readyState===WebSocket.OPEN)send({active_symbols:"brief"});else connect();};
-$("clear").onclick=()=>{if(confirm("Effacer les résultats WIN/LOSS locaux ?")){outcomes.length=0;localStorage.removeItem("deriv_signal_outcomes");for(const c of assets.values()){c.pending=[];c.signal=null}render();log("Historique local effacé.");}};
+$("clear").onclick=clearObservedHistory;
+$("exportHistory").onclick=exportHistoryJson;
+$("exportHistoryCsv").onclick=exportHistoryCsv;
+$("clearResearch").onclick=clearObservedHistory;
 $("demoLoadAccounts").onclick=loadAccounts;
 $("demoDisconnect").onclick=disconnectDemo;
 $("demoAuto").onclick=toggleDemoAuto;
