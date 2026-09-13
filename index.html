@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Deriv Signal Terminal V4.0 — Research First</title>
+  <title>Gold & Silver Signal Terminal — M1 / 5 Min</title>
   <style>
     :root{--bg:#07111f;--panel:#0d1b2d;--panel2:#101f33;--line:#20344d;--txt:#e8eef7;--muted:#8fa4bd;--green:#25d17d;--red:#ff5d6c;--yellow:#f5c451;--blue:#55a7ff}
     *{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#06101c,#09192b);color:var(--txt);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
@@ -1371,5 +1371,247 @@ renderDemoTrades();
 updateExecutionControls();
 renderRiskGuard();
 </script>
+
+<style>
+  :root{
+    --bg:#07111f;--panel:#0d1b2d;--panel2:#101f33;--line:#20344d;
+    --txt:#e8eef7;--muted:#8fa4bd;--green:#25d17d;--red:#ff5d6c;
+    --yellow:#f5c451;--blue:#55a7ff
+  }
+  .focused-banner{margin:0 0 14px;padding:14px 16px;border:1px solid var(--line);
+    border-radius:13px;background:linear-gradient(135deg,#0d2036,#0b1728)}
+  .focused-banner b{font-size:15px}.focused-banner small{display:block;color:var(--muted);margin-top:5px}
+  .asset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  @media(max-width:900px){.asset-grid{grid-template-columns:1fr}}
+  .focus-card{background:linear-gradient(180deg,var(--panel),#0a1727);border:1px solid var(--line);
+    border-radius:15px;padding:17px;min-height:360px}
+  .focus-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .focus-symbol{font-size:18px;font-weight:800}.focus-name{font-size:12px;color:var(--muted);margin-top:3px}
+  .decision{font-size:20px;font-weight:900;padding:7px 12px;border-radius:10px}
+  .decision.call{color:var(--green);background:#0d3b28}.decision.put{color:var(--red);background:#421820}
+  .decision.wait{color:var(--yellow);background:#382f12}
+  .confidence{margin:18px 0 12px}.confidence-top{display:flex;justify-content:space-between;align-items:end}
+  .confidence-score{font-size:35px;font-weight:900}.confidence-label{font-size:12px;color:var(--muted)}
+  .bar{height:9px;border-radius:99px;background:#17283c;overflow:hidden;margin-top:8px}
+  .bar>i{display:block;height:100%;width:0;background:var(--blue);border-radius:99px}
+  .metrics2{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+  @media(max-width:650px){.metrics2{grid-template-columns:repeat(2,1fr)}}
+  .metric2{padding:9px;border:1px solid var(--line);border-radius:9px;background:#0a1829}
+  .metric2 span{display:block;color:var(--muted);font-size:10px}.metric2 b{display:block;margin-top:3px;font-size:13px}
+  .reason{margin-top:12px;padding:10px;border-radius:9px;background:#0a1829;color:#cbd7e6;font-size:12px;line-height:1.45}
+  .history-box{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+  .history-box .mini{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+  .fixed-expiry{margin-top:10px;font-weight:800}.signal-note{font-size:11px;color:var(--muted);margin-top:5px}
+  .focus-table-wrap{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:auto}
+  .focus-table{width:100%;border-collapse:collapse;min-width:700px}.focus-table th,.focus-table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:12px}
+  .focus-table th{color:var(--muted);font-weight:600}.focus-table tr:last-child td{border-bottom:0}
+  .green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
+  .hidden-old{display:none!important}
+</style>
+
+<script>
+(function(){
+  const TARGETS = [
+    {symbol:"frxXAUUSD", aliases:["Gold/USD","XAU/USD","Gold"]},
+    {symbol:"frxXAGUSD", aliases:["Silver/USD","XAG/USD","Silver"]}
+  ];
+  const LOOKBACK=180, MIN_BARS=60, SCORE_SIGNAL=80, SCORE_STRONG=85, SCORE_VERY=90;
+  const EXPIRY_MIN=5;
+  const state = new Map(TARGETS.map(x=>[x.symbol,{
+    ...x,bars:[],ticks:[],last:null,signal:null,history:[],status:"WAIT",
+    ws:null,req:1,connected:false
+  }]));
+
+  function el(id){return document.getElementById(id)}
+  function fmt(v,n=3){return Number.isFinite(v)?Number(v).toFixed(n):"—"}
+  function clamp(v,a=0,b=100){return Math.max(a,Math.min(b,v))}
+  function sma(a,n){if(a.length<n)return null;let s=0;for(let i=a.length-n;i<a.length;i++)s+=a[i];return s/n}
+  function ema(values,n){
+    if(values.length<n)return null;
+    let e=values.slice(0,n).reduce((a,b)=>a+b,0)/n, k=2/(n+1);
+    for(let i=n;i<values.length;i++)e=values[i]*k+e*(1-k);
+    return e;
+  }
+  function rsi(values,n=14){
+    if(values.length<n+1)return null;
+    let g=0,l=0;
+    for(let i=values.length-n;i<values.length;i++){let d=values[i]-values[i-1];if(d>=0)g+=d;else l-=d}
+    if(l===0)return 100; const rs=(g/n)/(l/n); return 100-100/(1+rs);
+  }
+  function atr(bars,n=14){
+    if(bars.length<n+1)return null;
+    let tr=[]; for(let i=bars.length-n;i<bars.length;i++){
+      const b=bars[i],p=bars[i-1];
+      tr.push(Math.max(b.h-b.l,Math.abs(b.h-p.c),Math.abs(b.l-p.c)));
+    } return tr.reduce((a,b)=>a+b,0)/n;
+  }
+  function macd(values){
+    if(values.length<35)return null;
+    const fast=ema(values,12), slow=ema(values,26); if(fast==null||slow==null)return null;
+    const line=fast-slow;
+    const histPrev = values.length>36 ? (ema(values.slice(0,-1),12)-ema(values.slice(0,-1),26)) : line;
+    return {line,hist:line-(line-histPrev)*0.4};
+  }
+  function adxProxy(bars,n=14){
+    if(bars.length<n+1)return null;
+    let up=0,down=0;
+    for(let i=bars.length-n;i<bars.length;i++){
+      const d=bars[i].c-bars[i-1].c;
+      if(d>0)up+=d; else down-=d;
+    }
+    const total=up+down; return total?100*Math.abs(up-down)/total:null;
+  }
+  function aggregateTicks(ticks){
+    const m=new Map();
+    for(const t of ticks){
+      const minute=Math.floor(t.epoch/60)*60;
+      const old=m.get(minute);
+      if(!old)m.set(minute,{t:minute,o:t.q,h:t.q,l:t.q,c:t.q});
+      else {old.h=Math.max(old.h,t.q);old.l=Math.min(old.l,t.q);old.c=t.q}
+    }
+    return [...m.values()].sort((a,b)=>a.t-b.t);
+  }
+
+  function scoreAsset(s){
+    const b=s.bars, closes=b.map(x=>x.c);
+    if(b.length<MIN_BARS)return {dir:"WAIT",score:0,call:0,put:0,label:"DONNÉES INSUFFISANTES",reason:`${b.length}/${MIN_BARS} bougies M1 clôturées`};
+    const e20=ema(closes,20),e50=ema(closes,50),e20p=ema(closes.slice(0,-3),20),e50p=ema(closes.slice(0,-3),50);
+    const rr=rsi(closes), m=macd(closes), a=atr(b), last=b.at(-1), prev=b.at(-2);
+    const slope20=e20p?e20-e20p:0, slope50=e50p?e50-e50p:0;
+    const recent=b.slice(-5), bull=recent.filter(x=>x.c>x.o).length, bear=recent.filter(x=>x.c<x.o).length;
+    const mom=closes.at(-1)-closes.at(-6), avgMove=sma(closes.slice(1).map((x,i)=>Math.abs(x-closes[i])),14)||1;
+    const momentum=clamp(50+50*(mom/(avgMove*5)));
+    const trendCall=(last.c>e20?8:0)+(e20>e50?8:0)+(slope20>0?5:0)+(slope50>=0?4:0);
+    const trendPut=(last.c<e20?8:0)+(e20<e50?8:0)+(slope20<0?5:0)+(slope50<=0?4:0);
+    const momCall=momentum>55?Math.min(12,(momentum-50)*0.24):0;
+    const momPut=momentum<45?Math.min(12,(50-momentum)*0.24):0;
+    const structCall=(bull>=3?9:bull===2?5:0)+(last.c>prev.c?3:0);
+    const structPut=(bear>=3?9:bear===2?5:0)+(last.c<prev.c?3:0);
+    const rsiCall=rr>50&&rr<72?7:rr>=72?3:0;
+    const rsiPut=rr<50&&rr>28?7:rr<=28?3:0;
+    const macCall=m&&m.line>0&&m.hist>=0?8:m&&m.line>0?4:0;
+    const macPut=m&&m.line<0&&m.hist<=0?8:m&&m.line<0?4:0;
+    const volScore=a&&a>0?clamp(10*(a/(avgMove*2)),0,10):0;
+    let call=trendCall+momCall+structCall+rsiCall+macCall+volScore;
+    let put=trendPut+momPut+structPut+rsiPut+macPut+volScore;
+    const contradiction=Math.abs(call-put);
+    const indecision=(Math.abs(slope20)<avgMove*0.08 && Math.abs(momentum-50)<8);
+    if(indecision){call-=8;put-=8}
+    const direction=call>=put?"CALL":"PUT", raw=clamp(Math.max(call,put));
+    const gap=contradiction;
+    let dir=raw>=SCORE_SIGNAL&&gap>=10?direction:"WAIT";
+    let score=raw;
+    if(gap<10)score=Math.min(score,74);
+    if(indecision)score=Math.min(score,79);
+    const label=score>=SCORE_VERY?"TRÈS FORTE CONFLUENCE":score>=SCORE_STRONG?"FORTE CONFLUENCE":score>=SCORE_SIGNAL?"SIGNAL":"ATTENTE";
+    const reason=dir==="WAIT"
+      ? (gap<10?"CALL/PUT trop proches":indecision?"Marché indécis / EMA peu directionnelle":"Confluence insuffisante")
+      : `${direction==="CALL"?"Tendance haussière":"Tendance baissière"} · momentum ${direction==="CALL"?"positif":"négatif"} · confluence confirmée`;
+    return {dir,score:Math.round(score),call:Math.round(clamp(call)),put:Math.round(clamp(put)),label,reason,
+      e20,e50,rsi:rr,macd:m?m.line:null,momentum,atr:a,trend:direction==="CALL"?"HAUSSIÈRE":"BAISSIÈRE",gap};
+  }
+
+  function render(s,a){
+    const id=s.symbol.replace(/[^A-Za-z0-9]/g,""), box=el("focus-"+id);
+    if(!box)return;
+    const d=a.dir.toLowerCase();
+    box.querySelector(".decision").className="decision "+(d==="call"?"call":d==="put"?"put":"wait");
+    box.querySelector(".decision").textContent=a.dir==="CALL"?"CALL / RISE":a.dir==="PUT"?"PUT / FALL":"WAIT / NO TRADE";
+    box.querySelector(".confidence-score").textContent=(a.score||0)+"/100";
+    box.querySelector(".confidence-label").textContent=a.label||"ATTENTE";
+    box.querySelector(".bar>i").style.width=clamp(a.score||0)+"%";
+    box.querySelector(".v-trend").textContent=a.trend||"—";
+    box.querySelector(".v-ema20").textContent=fmt(a.e20,4);
+    box.querySelector(".v-ema50").textContent=fmt(a.e50,4);
+    box.querySelector(".v-rsi").textContent=fmt(a.rsi,1);
+    box.querySelector(".v-mom").textContent=fmt(a.momentum,1);
+    box.querySelector(".v-call").textContent=(a.call||0)+"/100";
+    box.querySelector(".v-put").textContent=(a.put||0)+"/100";
+    box.querySelector(".reason").textContent=a.reason||"En attente de données.";
+    box.querySelector(".status-line").textContent=s.connected?"LIVE · données publiques":"CONNEXION / ATTENTE";
+    box.querySelector(".hist").textContent=`${s.history.length} résultats résolus`;
+  }
+
+  function card(s){
+    const id=s.symbol.replace(/[^A-Za-z0-9]/g,"");
+    return `<article class="focus-card" id="focus-${id}">
+      <div class="focus-head"><div><div class="focus-symbol">${s.aliases[0]}</div><div class="focus-name">${s.symbol} · M1</div></div><div class="decision wait">WAIT / NO TRADE</div></div>
+      <div class="confidence"><div class="confidence-top"><div><div class="confidence-label">SCORE DE CONFIANCE</div><div class="confidence-score">0/100</div></div><div class="confidence-label status-line">CONNEXION / ATTENTE</div></div><div class="bar"><i></i></div></div>
+      <div class="metrics2">
+        <div class="metric2"><span>TENDANCE</span><b class="v-trend">—</b></div>
+        <div class="metric2"><span>EMA20</span><b class="v-ema20">—</b></div>
+        <div class="metric2"><span>EMA50</span><b class="v-ema50">—</b></div>
+        <div class="metric2"><span>RSI14</span><b class="v-rsi">—</b></div>
+        <div class="metric2"><span>MOMENTUM</span><b class="v-mom">—</b></div>
+        <div class="metric2"><span>CALL SCORE</span><b class="v-call green">—</b></div>
+        <div class="metric2"><span>PUT SCORE</span><b class="v-put red">—</b></div>
+        <div class="metric2"><span>EXPIRATION</span><b>5 MIN</b></div>
+      </div>
+      <div class="reason">En attente de données.</div>
+      <div class="history-box"><div class="mini"><span>Historique : <b class="hist">0 résultats résolus</b></span><span>Décision : <b>signal-only</b></span></div><div class="fixed-expiry">EXPIRATION FIXE : 5 MINUTES</div><div class="signal-note">Le score est un indice de confluence technique, pas une probabilité garantie de gain.</div></div>
+    </article>`;
+  }
+
+  function mount(){
+    const main=document.querySelector("main");
+    if(!main)return;
+    main.innerHTML=`<div class="focused-banner"><b>Gold & Silver Signal Terminal</b><small>Analyse M1 · Rise/Fall · expiration fixe 5 minutes · signal-only · aucune exécution automatique.</small></div>
+      <div class="asset-grid">${TARGETS.map(card).join("")}</div>
+      <div class="focus-table-wrap"><table class="focus-table"><thead><tr><th>Actif</th><th>Direction</th><th>Score</th><th>CALL</th><th>PUT</th><th>Expiration</th><th>Résultats</th></tr></thead><tbody id="focusRows"><tr><td colspan="7">Accumulation des données…</td></tr></tbody></table></div>`;
+  }
+
+  function renderRows(){
+    const rows=[...state.values()].map(s=>{const a=s.last||{dir:"WAIT",score:0,call:0,put:0};return `<tr><td><b>${s.aliases[0]}</b></td><td class="${a.dir==="CALL"?"green":a.dir==="PUT"?"red":"yellow"}"><b>${a.dir}</b></td><td><b>${a.score}/100</b></td><td>${a.call||0}</td><td>${a.put||0}</td><td>5 min</td><td>${s.history.length}</td></tr>`}).join("");
+    el("focusRows").innerHTML=rows;
+  }
+
+  function resolveOldest(s){
+    // Research-only outcome resolution: signals are settled from future M1 closes.
+    for(const h of s.history.filter(x=>x.result==="PENDING")){
+      const target=h.entryTime+EXPIRY_MIN*60;
+      const bar=s.bars.find(b=>b.t>=target);
+      if(!bar)continue;
+      h.result=h.dir==="CALL"?(bar.c>h.entry?"WIN":bar.c<h.entry?"LOSS":"NEUTRAL")
+        :(bar.c<h.entry?"WIN":bar.c>h.entry?"LOSS":"NEUTRAL");
+      h.exit=bar.c; h.exitTime=bar.t;
+    }
+  }
+
+  function process(s){
+    s.bars=aggregateTicks(s.ticks).filter(b=>b.t<Math.floor(Date.now()/1000/60)*60).slice(-LOOKBACK);
+    const a=scoreAsset(s);
+    s.last=a;
+    if(a.dir!=="WAIT"){
+      const lastSig=s.history.at(-1);
+      const nowBar=s.bars.at(-1);
+      const duplicate=lastSig && lastSig.result==="PENDING" && lastSig.dir===a.dir;
+      if(nowBar&&!duplicate){
+        s.history.push({time:nowBar.t,entryTime:nowBar.t+60,entry:nowBar.c,dir:a.dir,score:a.score,result:"PENDING"});
+        s.history=s.history.slice(-500);
+      }
+    }
+    resolveOldest(s);
+    render(s,a); renderRows();
+  }
+
+  function connect(s){
+    try{
+      s.ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+      s.ws.onopen=()=>{s.connected=true;s.ws.send(JSON.stringify({ticks_history:s.symbol,style:"ticks",count:1000,end:"latest",req_id:s.req++}));s.ws.send(JSON.stringify({ticks:s.symbol,subscribe:1,req_id:s.req++}));process(s)};
+      s.ws.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch{return};
+        if(d.history?.prices&&d.history?.times){for(let i=0;i<d.history.prices.length;i++)s.ticks.push({q:Number(d.history.prices[i]),epoch:Number(d.history.times[i])});s.ticks=s.ticks.slice(-2500);process(s)}
+        if(d.tick){s.ticks.push({q:Number(d.tick.quote),epoch:Number(d.tick.epoch)});s.ticks=s.ticks.slice(-2500);process(s)}
+      };
+      s.ws.onclose=()=>{s.connected=false;process(s)};
+      s.ws.onerror=()=>{s.connected=false;process(s)};
+    }catch{process(s)}
+  }
+
+  mount();
+  for(const s of state.values())connect(s);
+  setInterval(()=>{for(const s of state.values())process(s)},15000);
+})();
+</script>
+
 </body>
 </html>
