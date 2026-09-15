@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deriv Synthetic Indices M1 · 5min CALL/PUT · AUTO · V15</title>
+<style>
+:root{--bg:#07111f;--panel:#0d1b2d;--panel2:#101f33;--line:#20344d;--txt:#e8eef7;--muted:#8fa4bd;--green:#25d17d;--red:#ff5d6c;--yellow:#f5c451;--blue:#55a7ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#06101c,#09192b);color:var(--txt);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}header{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;position:sticky;top:0;background:#07111fee;backdrop-filter:blur(12px);z-index:5}h1{font-size:20px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:4px}.status{display:flex;gap:8px;align-items:center;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:var(--red)}.dot.ok{background:var(--green);box-shadow:0 0 12px #25d17d88}main{max-width:1500px;margin:auto;padding:18px}.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}.btn{border:1px solid var(--line);background:var(--panel);color:var(--txt);padding:10px 14px;border-radius:9px;cursor:pointer}.btn:hover{border-color:#3c5b7e}.btn.primary{background:#12345a;border-color:#2b6ca7}.btn.warn{border-color:#7b6425}.btn.danger{border-color:#8a2d39;background:#32151a}.btn:disabled{opacity:.45;cursor:not-allowed}.panel{background:linear-gradient(180deg,var(--panel),#0a1727);border:1px solid var(--line);border-radius:13px;padding:15px;margin-bottom:14px}.panel-title{font-weight:800;font-size:15px}.muted{color:var(--muted)}.tiny{font-size:11px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:linear-gradient(180deg,var(--panel),#0a1727);border:1px solid var(--line);border-radius:13px;padding:14px;min-height:270px}.card-top{display:flex;justify-content:space-between;gap:10px}.asset{font-weight:800;font-size:17px}.name{font-size:11px;color:var(--muted);margin-top:3px}.pill{font-size:12px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);font-weight:800}.pill.call{color:var(--green);border-color:#1f7d53;background:#0d3b28}.pill.put{color:var(--red);border-color:#81313c;background:#421820}.pill.wait{color:var(--yellow);border-color:#806a29;background:#382f12}.price{font-size:25px;font-weight:800;margin:15px 0 8px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.metric{border:1px solid var(--line);border-radius:8px;padding:9px;background:#09182a}.metric small{display:block;color:var(--muted);font-size:10px}.metric b{font-size:13px}.score{font-size:35px;font-weight:900}.bar{height:9px;background:#16283e;border-radius:999px;overflow:hidden;margin:7px 0 10px}.bar>i{display:block;height:100%;background:var(--blue);width:0}.reason{font-size:11px;color:var(--muted);line-height:1.45;min-height:32px}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px}.stat small{display:block;color:var(--muted);font-size:10px}.stat b{font-size:17px}.auto-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px}.auth-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.input{background:#071625;border:1px solid var(--line);color:var(--txt);padding:10px;border-radius:8px;min-width:220px;flex:1}.mode{display:flex;gap:8px}.mode .btn.active{outline:2px solid #4a86c5;background:#163e66}.auto-main{border:1px solid #3b5775;border-radius:12px;padding:14px;background:linear-gradient(180deg,#0e2239,#09182a)}.auto-main h2{margin:0 0 5px;font-size:16px}.auto-state{font-size:24px;font-weight:900;margin:8px 0}.auto-on{color:var(--green)}.auto-off{color:var(--yellow)}.risk{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.risk .metric{background:#0a1828}.log{background:#050e19;border:1px solid var(--line);border-radius:9px;padding:10px;height:120px;overflow:auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;font-size:12px}.table th,.table td{padding:9px;border-bottom:1px solid var(--line);text-align:left}.table th{color:var(--muted);font-weight:600}.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.center{text-align:center}.footer-note{font-size:11px;color:var(--muted);margin-top:10px}@media(max-width:900px){.grid,.auto-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.metrics{grid-template-columns:repeat(2,1fr)}.risk{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><div><h1>Deriv Signal Terminal</h1><div class="sub">V15 · audit exhaustif · Synthetic/Derived Indices Deriv · M1 → 5min CALL/PUT · AUTO-TRADER séparé · reconnexion automatique</div></div><div class="status"><span id="dot" class="dot"></span><span id="connection">DÉCONNECTÉ</span></div></header>
+<main>
+<div class="toolbar"><button class="btn primary" id="start">▶ Démarrer le scanner</button><button class="btn" id="stop" disabled>■ Arrêter</button><button class="btn" id="refresh">↻ Actualiser</button></div>
+<section class="panel"><div class="panel-title">Multi-Asset Signal Terminal</div><div class="sub">Synthetic/Derived Indices uniquement · Crash/Boom exclus · M1 → 5 min · Forex classique, actions, ETF, indices financiers et matières premières exclus · seuls les actifs disposant réellement de CALL + PUT sont chargés · le score est une confluence technique, pas une probabilité garantie.</div></section>
+<section class="panel"><div class="panel-title">🔎 UNIVERS PAR FAMILLE</div><div class="sub">Le terminal demande d’abord <b>tous</b> les Synthetic/Derived à l’API, sans filtre CALL/PUT. Ensuite chaque actif sélectionné est vérifié avec <b>contracts_for</b>. Une famille peut donc apparaître ici même si ses actifs sont finalement bloqués faute de CALL + PUT.</div><div id="familyAudit" class="table-wrap" style="margin-top:10px"><table class="table"><thead><tr><th>Famille</th><th>Trouvés API</th><th>Vérifiés</th><th>CALL+PUT OK</th><th>Ouverts</th><th>M1 chargé</th></tr></thead><tbody id="familyAuditBody"></tbody></table></div></section>
+<div id="cards" class="grid"></div>
+<div class="stats"><div class="stat"><small>Actifs suivis</small><b id="nAssets">0</b></div><div class="stat"><small>Signaux actifs</small><b id="nSignals">0</b></div><div class="stat"><small>Résultats backtest</small><b id="btN">0</b></div><div class="stat"><small>WR backtest</small><b id="btWR">—</b></div><div class="stat"><small>AUTO</small><b id="autoMini">ARRÊTÉ</b></div></div>
+<section class="panel"><div class="panel-title">🤖 AUTO-TRADER — DÉMO / RÉEL</div><div class="sub">Une fois le compte connecté, un seul bouton active/désactive l’exécution. Par sécurité, l’AUTO ne peut entrer que sur un Synthetic/Derived Index validé par l’historique interne et avec un score M1 ≥ 72/100. Aucune martingale.</div>
+<div class="auto-grid" style="margin-top:12px">
+<div class="auto-main"><h2 id="autoTitle">AUTO-TRADER ARRÊTÉ</h2><div id="autoState" class="auto-state auto-off">OFF</div><div class="tiny muted" id="accountState">Compte non connecté</div><div class="auth-row"><input id="appId" class="input" placeholder="Deriv App ID" autocomplete="off"><input id="pat" class="input" type="password" placeholder="Personal Access Token (PAT)" autocomplete="off"></div><div class="auth-row"><div class="mode"><button class="btn active" id="demoMode">🟢 DÉMO</button><button class="btn warn" id="realMode">🔴 RÉEL</button></div><button class="btn primary" id="connectAccount">🔐 Connecter le compte</button><button class="btn danger" id="disconnectAccount" disabled>Déconnecter</button></div></div>
+<div class="auto-main"><h2>Compte sélectionné</h2><div id="selectedAccount" class="auto-state">—</div><div class="tiny muted" id="balance">Solde : —</div><div class="tiny muted" style="margin-top:8px">Mise fixe AUTO · 1%</div><input id="stakePct" class="input" type="number" min="1" max="1" step="1" value="1" readonly style="margin-top:6px;width:100%"><div class="tiny muted" style="margin-top:5px">% du solde · maximum 1 contrat ouvert à la fois</div></div>
+<div class="auto-main"><h2>Commande</h2><button class="btn primary" id="autoToggle" disabled style="width:100%;font-size:16px;padding:13px">🔒 Connecte le compte</button><button class="btn" id="autoStop" style="width:100%;margin-top:8px">🛑 STOP D’URGENCE</button><div class="risk"><div class="metric"><small>CAPITAL RÉF. JOUR</small><b id="dailyRef">—</b></div><div class="metric"><small>P/L JOUR</small><b id="sessionPnl">0.00 (0.00%)</b></div><div class="metric"><small>Trades</small><b id="tradeCount">0</b></div><div class="metric"><small>WIN</small><b id="winCount">0</b></div><div class="metric"><small>LOSS</small><b id="lossCount">0</b></div></div></div>
+</div>
+<div class="footer-note">⚠️ Le mode RÉEL demande une confirmation explicite au moment de l’activation. Le PAT reste en mémoire uniquement dans cette page et n’est pas écrit dans le journal.</div>
+</section>
+<section class="panel"><div class="panel-title">🧭 Univers par famille — sélection exhaustive V15</div><div class="sub">Le terminal ne privilégie plus Step. Les candidats Synthetic/Derived sont d’abord audités par famille, puis CALL + PUT est vérifié avec contracts_for. Aucun actif compatible n’est écarté à cause de l’ordre de réponse de l’API.</div><div class="table-wrap"><table class="table"><thead><tr><th>Famille</th><th>Candidats</th><th>Dans le scanner</th><th>Ouverts</th><th>Couverture</th></tr></thead><tbody id="familyTable"></tbody></table></div></section>
+<section class="panel"><div class="panel-title">📊 Historique conditionnel — même moteur que LIVE</div><div class="sub">Le moteur est volontairement unique : M1 + expiration 5 min sur les Synthetic/Derived Indices. Le backtest utilise le même moteur LIVE, sans look-ahead. Le terminal découvre les actifs disponibles, vérifie CALL + PUT, puis classe les setups et ne prend qu'un seul contrat à la fois.</div><div class="table-wrap"><table class="table"><thead><tr><th>Actif</th><th>Signal actuel</th><th>Score</th><th>Résultats historiques</th><th>WR</th><th>Statut AUTO</th></tr></thead><tbody id="historyTable"></tbody></table></div></section>
+<section class="panel"><div class="panel-title">Journal</div><div id="log" class="log">Initialisation…</div></section>
+</main>
+<script>
+const PUBLIC_WS='wss://api.derivws.com/trading/v1/options/ws/public';
+const API_BASE='https://api.derivws.com';
+const TARGETS=[];
+const MIN_BARS_5=80,HISTORY_BARS_5=1500,AUTO_SCORE_5=72,MIN_SIGNAL_GAP_5=6,MIN_BT_TRADES_5=12,MIN_BT_WR=52,MAX_CONCURRENT=1,DAILY_STOP_LOSS_PCT=0.10,DAILY_STOP_PROFIT_PCT=0.10,HISTORY_SCORE_5=66;
+const AUTO_STAKE_PCT=0.01;
+const DAILY_GUARD_KEY='deriv_auto_daily_guard_v14';
+let pub=null,run=false,req=0,mode='demo',account=null,authWs=null,connected=false,auto=false,autoStopped=false,pendingBuy=new Map(),openContract=null,session={startBalance:null,pnl:0,trades:0,wins:0,losses:0};
+let dailyGuard={date:null,key:null,startBalance:null,pnl:0,trades:0,wins:0,losses:0,stopped:false,stopReason:''};
+let authToken='',authAppId='',authReconnectTimer=null,authHeartbeat=null,authReconnectAttempt=0,authManualClose=false,authConnecting=false,lastAutoWaitLog=0;
+let publicReconnectTimer=null,publicHeartbeat=null,publicWatchdog=null,publicRefresh=null,publicReconnectAttempt=0,publicManualClose=false,publicConnecting=false,publicBatchQueue=[],publicLastPong=0;
+let ctx=new Map();
+const historyReq=new Map();
+const contractReq=new Map();
+let discoveredSymbols=[], contractQueue=[], contractBatchTimer=null, universeCycle=0;
+const MAX_DYNAMIC_ASSETS=120, CONTRACT_BATCH_SIZE=4;
+const $=id=>document.getElementById(id); const log=m=>{$('log').textContent='['+new Date().toLocaleTimeString()+'] '+m+'\n'+$('log').textContent.slice(0,9000)};
+
+function send(o){if(pub&&pub.readyState===WebSocket.OPEN){const id=++req;pub.send(JSON.stringify({...o,req_id:id}));return id}return null;}
+function sendAuth(o){if(authWs&&authWs.readyState===WebSocket.OPEN){const id=++req;authWs.send(JSON.stringify({...o,req_id:id}));return id}return null}
+function ema(a,n){if(a.length<n)return null;let k=2/(n+1),e=a.slice(0,n).reduce((x,y)=>x+y,0)/n;for(let i=n;i<a.length;i++)e=a[i]*k+e*(1-k);return e}
+function rsi(a,n=14){if(a.length<n+1)return null;let g=0,l=0;for(let i=1;i<=n;i++){let d=a[i]-a[i-1];g+=Math.max(d,0);l+=Math.max(-d,0)}let ag=g/n,al=l/n;for(let i=n+1;i<a.length;i++){let d=a[i]-a[i-1];ag=(ag*(n-1)+Math.max(d,0))/n;al=(al*(n-1)+Math.max(-d,0))/n}if(al===0)return 100;return 100-100/(1+ag/al)}
+function atr(b,n=14){if(b.length<n+1)return null;let tr=[];for(let i=1;i<b.length;i++)tr.push(Math.max(b[i].h-b[i].l,Math.abs(b[i].h-b[i-1].c),Math.abs(b[i].l-b[i-1].c)));return tr.slice(-n).reduce((x,y)=>x+y,0)/n}
+function macd(a){if(a.length<35)return null;let line=ema(a,12)-ema(a,26);let vals=[];for(let i=26;i<a.length;i++){let e12=ema(a.slice(0,i+1),12),e26=ema(a.slice(0,i+1),26);if(e12!=null&&e26!=null)vals.push(e12-e26)}let sig=ema(vals,9);return sig==null?null:{line,hist:line-sig}}
+function slope(a,n=12){if(a.length<n+1)return 0;let x=a.slice(-n),first=x[0],last=x.at(-1);let avg=Math.max(1e-9,Math.abs(first));return (last-first)/avg*100}
+function getClosedBars(c){const cutoff=Math.floor(Date.now()/60000)*60;return c.bars.filter(b=>b.t+60<=cutoff)}
+function analyze(c,bars=getClosedBars(c)){
+ const minBars=MIN_BARS_5,gapMin=MIN_SIGNAL_GAP_5,scoreMin=AUTO_SCORE_5;
+ if(bars.length<minBars)return {dir:'NONE',score:0,call:0,put:0,gap:0,trend:'—',reason:'Données M1 insuffisantes',ema20:null,ema50:null,rsi:null,mom:null,atr:null,price:bars.at(-1)?.c};
+ let closes=bars.map(x=>x.c),e20=ema(closes,20),e50=ema(closes,50),rs=rsi(closes),m=macd(closes),a=atr(bars),last=closes.at(-1),look=6,mom=(last-closes.at(-look))/Math.max(1e-9,Math.abs(closes.at(-look)))*100,sl=slope(closes,12),prev=bars.slice(-12,-1),hh=Math.max(...prev.map(x=>x.h)),ll=Math.min(...prev.map(x=>x.l));
+ let bull=0,bear=0,reasons=[];
+ if(e20>e50){bull+=20;reasons.push('EMA20>EMA50')}else{bear+=20;reasons.push('EMA20<EMA50')}
+ if(last>e20){bull+=10}else{bear+=10}
+ if(m?.hist>0){bull+=15;reasons.push('MACD +')}else if(m){bear+=15;reasons.push('MACD -')}
+ if(rs>=50&&rs<=68)bull+=10;else if(rs<=50&&rs>=32)bear+=10;else if(rs>80)bull-=5;else if(rs<20)bear-=5;
+ if(mom>0.015){bull+=15}else if(mom<-0.015){bear+=15}
+ if(sl>0.01){bull+=10}else if(sl<-0.01){bear+=10}
+ if(last>hh){bull+=10;reasons.push('breakout haut')}else if(last<ll){bear+=10;reasons.push('breakout bas')}
+ let p3=bars.at(-3),p1=bars.at(-1);if(p3&&p1&&p1.h>p3.h&&p1.l>=p3.l&&last>e20){bull+=10;reasons.push('structure HH/HL')}else if(p3&&p1&&p1.l<p3.l&&p1.h<=p3.h&&last<e20){bear+=10;reasons.push('structure LH/LL')}
+ let range=(Math.max(...bars.slice(-10).map(x=>x.h))-Math.min(...bars.slice(-10).map(x=>x.l)))/Math.max(1e-9,last);if(range<0.001){bull-=4;bear-=4;reasons.push('range serré')}
+ let call=Math.max(0,Math.min(100,Math.round(bull))),put=Math.max(0,Math.min(100,Math.round(bear))),gap=Math.abs(call-put),dir=call>=put?'CALL':'PUT',score=Math.max(call,put);if(gap<gapMin||score<scoreMin)dir='NONE';let trend=e20>e50&&last>e20?'HAUSSIÈRE':e20<e50&&last<e20?'BAISSIÈRE':'NEUTRE';return {dir,score,call,put,gap,trend,reason:reasons.slice(0,6).join(' · '),ema20:e20,ema50:e50,rsi:rs,mom,atr:a,macd:m?.hist??null,price:last};}
+
+function candlesFromResponse(d){return (d.candles||[]).map(x=>({t:Number(x.epoch),o:Number(x.open),h:Number(x.high),l:Number(x.low),c:Number(x.close)})).filter(x=>[x.t,x.o,x.h,x.l,x.c].every(Number.isFinite)).sort((a,b)=>a.t-b.t)}
+function aggregateBars(bars,g=900){let out=[];for(const b of bars){let t=Math.floor(b.t/g)*g,x=out.at(-1);if(!x||x.t!==t)out.push({t,o:b.o,h:b.h,l:b.l,c:b.c});else{x.c=b.c;x.h=Math.max(x.h,b.h);x.l=Math.min(x.l,b.l);}}return out;}
+function backtest(c){let bars=getClosedBars(c),n=0,w=0,callN=0,callW=0,putN=0,putW=0,expiryBars=5,historyScore=HISTORY_SCORE_5;for(let i=MIN_BARS_5;i<bars.length-expiryBars;i++){let histSlice=bars.slice(0,i+1),temp=c;let a=analyze(temp,histSlice);if(a.dir==='NONE'||a.score<historyScore)continue;let e=bars[i].c,ex=bars[i+expiryBars].c,r=a.dir==='CALL'?(ex>e?'WIN':'LOSS'):(ex<e?'WIN':'LOSS');n++;if(r==='WIN')w++;if(a.dir==='CALL'){callN++;if(r==='WIN')callW++;}else{putN++;if(r==='WIN')putW++;}}c.backtest={n,w,wr:n?w/n*100:null,callN,callW,putN,putW};}
+
+function localDayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function dailyStorageKey(){return `${DAILY_GUARD_KEY}:${mode}:${account?.account_id||'unknown'}`;}
+function loadDailyGuard(){
+ try{const raw=localStorage.getItem(dailyStorageKey());const x=raw?JSON.parse(raw):null;const day=localDayKey();
+   if(x&&x.date===day){dailyGuard={...dailyGuard,...x};autoStopped=!!x.stopped;return;}
+ }catch{}
+ dailyGuard={date:localDayKey(),key:dailyStorageKey(),startBalance:null,pnl:0,trades:0,wins:0,losses:0,stopped:false,stopReason:''};
+ autoStopped=false;
+ saveDailyGuard();
+}
+function saveDailyGuard(){try{dailyGuard.key=dailyStorageKey();localStorage.setItem(dailyGuard.key,JSON.stringify(dailyGuard));}catch{}}
+function ensureDailyReference(balance){
+ const day=localDayKey();
+ if(dailyGuard.date!==day||dailyGuard.key!==dailyStorageKey()) loadDailyGuard();
+ if(!(Number(dailyGuard.startBalance)>0) && Number(balance)>0){dailyGuard.startBalance=Number(balance);saveDailyGuard();log(`GARDE-FOU JOURNALIER: capital de référence ${dailyGuard.startBalance.toFixed(2)} ${account?.currency||'USD'} · limites ±10%.`);}
+ return Number(dailyGuard.startBalance)>0;
+}
+function dailyPnlPct(){return dailyGuard.startBalance>0?dailyGuard.pnl/dailyGuard.startBalance*100:0;}
+function evaluateDailyGuard(){
+ if(!account) return false;
+ if(dailyGuard.date!==localDayKey()||dailyGuard.key!==dailyStorageKey()) loadDailyGuard();
+ if(dailyGuard.stopped) return true;
+ if(!(dailyGuard.startBalance>0)) return false;
+ const lossLimit=-dailyGuard.startBalance*DAILY_STOP_LOSS_PCT, profitLimit=dailyGuard.startBalance*DAILY_STOP_PROFIT_PCT;
+ if(dailyGuard.pnl<=lossLimit){dailyGuard.stopped=true;dailyGuard.stopReason=`perte journalière ${dailyPnlPct().toFixed(2)}% ≤ -10%`;saveDailyGuard();stopAuto(`ARRÊT JOURNALIER — ${dailyGuard.stopReason}`);return true;}
+ if(dailyGuard.pnl>=profitLimit){dailyGuard.stopped=true;dailyGuard.stopReason=`gain journalier ${dailyPnlPct().toFixed(2)}% ≥ +10%`;saveDailyGuard();stopAuto(`ARRÊT JOURNALIER — ${dailyGuard.stopReason}`);return true;}
+ saveDailyGuard();return false;
+}
+function syncDailyStats(){session.pnl=dailyGuard.pnl;session.trades=dailyGuard.trades;session.wins=dailyGuard.wins;session.losses=dailyGuard.losses;session.startBalance=dailyGuard.startBalance;}
+
+function renderCard(c){let a=c.analysis||{score:0,call:0,put:0,dir:'NONE',reason:'En attente'};let pill=a.dir==='CALL'?'call':a.dir==='PUT'?'put':'wait';let text=a.dir==='CALL'?'CALL / RISE':a.dir==='PUT'?'PUT / FALL':'WAIT / NO TRADE';let market=c.status==='NO_CALLPUT'?'⛔ CALL/PUT INDISPONIBLES':c.marketOpen===false?'🔒 MARCHÉ FERMÉ':c.marketOpen===true?'🟢 MARCHÉ OUVERT':'⏳ HORAIRES INCONNUS';return `<div class="card"><div class="card-top"><div><div class="asset">${c.name}</div><div class="name">${c.symbol||'symbole en découverte'} · ${c.tf} · ${c.role} · ${market}</div></div><div class="pill ${pill}">${text}</div></div><div class="price">${c.price??'—'}</div><div class="score">${a.score||0}/100</div><div class="bar"><i style="width:${a.score||0}%"></i></div><div class="metrics"><div class="metric"><small>TENDANCE</small><b>${a.trend||'—'}</b></div><div class="metric"><small>EMA20</small><b>${a.ema20?fmt(a.ema20):'—'}</b></div><div class="metric"><small>EMA50</small><b>${a.ema50?fmt(a.ema50):'—'}</b></div><div class="metric"><small>RSI14</small><b>${a.rsi? a.rsi.toFixed(1):'—'}</b></div><div class="metric"><small>CALL</small><b class="good">${a.call||0}/100</b></div><div class="metric"><small>PUT</small><b class="bad">${a.put||0}/100</b></div><div class="metric"><small>EXPIRATION</small><b>${c.expiry} MIN</b></div><div class="metric"><small>HISTORIQUE</small><b>${c.backtest.n} · ${c.backtest.wr==null?'—':c.backtest.wr.toFixed(1)+'%'}</b></div></div><div class="reason" style="margin-top:10px">${a.reason}</div><div class="footer-note">${c.bars.length}/${HISTORY_BARS_5} bougies ${c.tf} · score AUTO M1 adapté à l’expiration 5 min</div></div>`}
+function fmt(x){return Number(x).toFixed(x>100?2:4)}
+function render(){
+ let arr=[...ctx.values()];
+ $('cards').innerHTML=arr.map(renderCard).join('');$('nAssets').textContent=arr.length;
+ const validSignals=arr.filter(c=>c.analysis&&c.bars.length>=MIN_BARS_5&&c.analysis.dir!=='NONE'&&c.status!=='NO_CALLPUT');
+ $('nSignals').textContent=validSignals.length;
+ let bt=arr.reduce((s,c)=>({n:s.n+c.backtest.n,w:s.w+c.backtest.w}),{n:0,w:0});$('btN').textContent=bt.n;$('btWR').textContent=bt.n?(bt.w/bt.n*100).toFixed(1)+'%':'—';
+ $('autoMini').textContent=auto?'ACTIF':'ARRÊTÉ';$('autoMini').className=auto?'good':'';
+ const fs=window.__familyStats||[];const familyEl=$('familyTable');if(familyEl)familyEl.innerHTML=fs.map(x=>`<tr><td><b>${x.role}</b></td><td>${x.total}</td><td>${x.selected}</td><td>${x.open}</td><td>${x.selected?((x.selected/Math.max(1,x.total))*100).toFixed(0)+'%':'—'}</td></tr>`).join('');
+ const auditEl=$('familyAuditBody');if(auditEl)auditEl.innerHTML=fs.map(x=>`<tr><td><b>${x.role}</b></td><td>${x.total}</td><td>${x.checked}</td><td class="${x.callput?'good':'warn'}">${x.callput}</td><td>${x.open}</td><td>${x.loaded}</td></tr>`).join('');
+ $('historyTable').innerHTML=arr.map(c=>{let eligible=c.backtest.n>=(MIN_BT_TRADES_5)&&c.backtest.wr>=MIN_BT_WR&&c.analysis?.score>=(AUTO_SCORE_5)&&c.analysis?.dir!=='NONE';return `<tr><td><b>${c.name}</b></td><td>${c.analysis?.dir||'WAIT'}</td><td>${c.analysis?.score||0}/100</td><td>${c.backtest.n}</td><td>${c.backtest.wr==null?'—':c.backtest.wr.toFixed(1)+'%'}</td><td class="${eligible?'good':'warn'}">${eligible?'ÉLIGIBLE':'BLOQUÉ'}</td></tr>`}).join('');
+}
+function normSymbol(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function matchTarget(t,s){const sym=normSymbol(s.underlying_symbol),name=String(s.underlying_symbol_name||'').toLowerCase(),aliases=t.aliases.map(normSymbol);if(aliases.includes(sym))return true;return aliases.some(a=>a.length>=4&&normSymbol(name).includes(a));}
+function isSyntheticIndexCandidate(s){
+ const type=String(s.underlying_symbol_type||'').toLowerCase();
+ const market=String(s.market||'').toLowerCase();
+ const subgroup=String(s.subgroup||'').toLowerCase();
+ const submarket=String(s.submarket||'').toLowerCase();
+ const raw=`${s.underlying_symbol||''} ${s.underlying_symbol_name||''}`.toLowerCase();
+ const all=`${raw} ${type} ${market} ${subgroup} ${submarket}`;
+ const reject=['forex','stock','share','etf','commodity','cryptocurrency','crypto','financial','basket','derivedfx','derived fx'];
+ if(reject.some(x=>all.includes(x))) return false;
+ if(/crash|boom/.test(all)) return false;
+ const families=['synthetic','volatility','jump','step','range break','rangebreak','dex','drift','hybrid','skew','trek','daily reset','multi step','multistep','volatility switch','stable spread','tactical'];
+ const explicit=families.some(x=>all.includes(x));
+ const syntheticType=/synthetic/.test(type)||/synthetic/.test(market)||/synthetic/.test(subgroup)||/synthetic/.test(submarket);
+ const derivedType=/derived/.test(type)||/derived/.test(market)||/derived/.test(subgroup)||/derived/.test(submarket);
+ const indexNamed=/index/.test(raw);
+ return explicit||syntheticType||derivedType||indexNamed;
+}
+function classifySyntheticSymbol(s){
+ const sym=String(s.underlying_symbol||'').toUpperCase();const name=String(s.underlying_symbol_name||sym);const raw=`${sym} ${name}`.toLowerCase();const n=normSymbol(raw);
+ let role='synthetic';
+ if(raw.includes('crash')||raw.includes('boom')) role='excluded_crashboom';
+ else if(raw.includes('range break')||n.includes('rangebreak')) role='rangebreak';
+ else if(raw.includes('volatility switch')) role='volswitch';
+ else if(raw.includes('multi step')||raw.includes('multistep')) role='multistep';
+ else if(raw.includes('skew step')||raw.includes('skewstep')||raw.includes('skew')) role='skewstep';
+ else if(raw.includes('volatility')) role='volatility';
+ else if(raw.includes('jump')) role='jump';
+ else if(raw.includes('drift')) role='drift';
+ else if(raw.includes('dex')) role='dex';
+ else if(raw.includes('hybrid')) role='hybrid';
+ else if(raw.includes('trek')) role='trek';
+ else if(raw.includes('daily reset')) role='dailyreset';
+ else if(raw.includes('tactical')) role='tactical';
+ else if(raw.includes('stable spread')) role='stablespread';
+ else if(raw.includes('step')) role='step';
+ return {key:'syn_'+n,name,symbol:s.underlying_symbol,tf:'M1',expiry:5,granularity:60,role,source:'synthetic'};
+}
+function buildFullCandidatePool(list){
+ const ranked=list.filter(isSyntheticIndexCandidate).map(s=>classifySyntheticSymbol(s));
+ const seen=new Set(),groups=new Map();
+ for(const t of ranked){if(!t.symbol||seen.has(t.key))continue;seen.add(t.key);if(!groups.has(t.role))groups.set(t.role,[]);groups.get(t.role).push(t)}
+ const roles=[...groups.keys()].sort((a,b)=>a.localeCompare(b));const all=[];let round=0;
+ while(true){let added=0;for(const role of roles){const arr=groups.get(role)||[];if(arr[round]){all.push(arr[round]);added++;}}if(!added)break;round++;}
+ return all;
+}
+function buildSyntheticUniverse(list){
+ const full=buildFullCandidatePool(list),groups=new Map();for(const t of full){if(!groups.has(t.role))groups.set(t.role,[]);groups.get(t.role).push(t)}
+ const roles=[...groups.keys()].sort((a,b)=>a.localeCompare(b)),chosen=[];let round=0;
+ while(chosen.length<MAX_DYNAMIC_ASSETS){let added=0;for(const role of roles){const arr=groups.get(role)||[];if(arr[round]){chosen.push(arr[round]);added++;if(chosen.length>=MAX_DYNAMIC_ASSETS)break;}}if(!added)break;round++;}
+ return chosen;
+}
+function getFamilyStats(allList,selected){
+ const candidates=buildFullCandidatePool(allList),sel=new Map(selected.map(x=>[x.key,x]));const roles=[...new Set(candidates.map(x=>x.role))];
+ return roles.map(role=>{const c=candidates.filter(x=>x.role===role),chosen=c.filter(x=>sel.has(x.key)),zs=c.map(x=>ctx.get(x.key)).filter(Boolean);return {role,total:c.length,selected:chosen.length,checked:zs.filter(z=>z.contractsChecked).length,callput:zs.filter(z=>z.contractsOk===true).length,open:zs.filter(z=>z.marketOpen===true&&!z.suspended).length,loaded:zs.filter(z=>z.loadedM1||z.bars.length>0).length};}).filter(x=>x.total>0||x.selected>0);
+}
+function selectCompatibleUniverse(){
+ const full=buildFullCandidatePool(window.__lastActiveSymbols||[]),compatible=full.filter(t=>ctx.get(t.key)?.contractsOk===true),groups=new Map();
+ for(const t of compatible){if(!groups.has(t.role))groups.set(t.role,[]);groups.get(t.role).push(t)}
+ const roles=[...groups.keys()].sort((a,b)=>a.localeCompare(b)),selected=[],seen=new Set();let round=0;
+ while(selected.length<MAX_DYNAMIC_ASSETS){let added=0;for(const role of roles){const arr=groups.get(role)||[];if(arr[round]&&!seen.has(arr[round].key)){selected.push(arr[round]);seen.add(arr[round].key);added++;if(selected.length>=MAX_DYNAMIC_ASSETS)break;}}if(!added)break;round++;}
+ return selected;
+}
+function loadTargetData(c){if(!c||!c.symbol||c.contractsOk!==true)return;const id=send({ticks_history:c.symbol,end:'latest',count:HISTORY_BARS_5,style:'candles',granularity:60,subscribe:0});if(id)historyReq.set(id,c.key);if(c.marketOpen===true)send({ticks:c.symbol,subscribe:1});log(`${c.name}: CALL/PUT confirmés · chargement M1 + ticks · expiration 5 min.`);}
+function enqueueTargetBatches(list){contractQueue=[...list];runNextTargetBatch()}
+function runNextTargetBatch(){if(!run||!pub||pub.readyState!==WebSocket.OPEN||!contractQueue.length)return;const batch=contractQueue.splice(0,CONTRACT_BATCH_SIZE);log(`PUBLIC: vérification des contrats · lot ${batch.map(t=>t.name).join(', ')}.`);for(const t of batch){const c=ctx.get(t.key);if(!c?.symbol)continue;const cr=send({contracts_for:t.symbol});if(cr)contractReq.set(cr,t.key);}if(contractQueue.length)contractBatchTimer=setTimeout(runNextTargetBatch,1200);else log('PUBLIC: toutes les disponibilités CALL/PUT demandées · attente des réponses.');}
+function clearPublicTimers(){
+ if(publicHeartbeat){clearInterval(publicHeartbeat);publicHeartbeat=null;}
+ if(publicWatchdog){clearInterval(publicWatchdog);publicWatchdog=null;}
+ if(publicRefresh){clearInterval(publicRefresh);publicRefresh=null;}
+ if(publicReconnectTimer){clearTimeout(publicReconnectTimer);publicReconnectTimer=null;}
+ if(contractBatchTimer){clearTimeout(contractBatchTimer);contractBatchTimer=null;}
+}
+function startPublicHeartbeat(){if(publicHeartbeat)clearInterval(publicHeartbeat);publicHeartbeat=setInterval(()=>{if(run&&pub&&pub.readyState===WebSocket.OPEN){publicLastPong=Date.now();send({ping:1})}},30000)}
+function schedulePublicReconnect(reason='connexion perdue'){if(publicManualClose||!run)return;clearTimeout(publicReconnectTimer);publicReconnectAttempt++;const delay=Math.min(30000,Math.max(1000,1000*Math.pow(2,publicReconnectAttempt-1)));$('connection').textContent=`FLUX PERDU · reconnexion ${Math.ceil(delay/1000)}s`;$('dot').className='dot';log(`PUBLIC: flux interrompu (${reason}). Reconnexion #${publicReconnectAttempt} dans ${Math.ceil(delay/1000)}s.`);publicReconnectTimer=setTimeout(()=>{publicReconnectTimer=null;openPublicSocket(true)},delay)}
+function startPublicWatchdog(){if(publicWatchdog)clearInterval(publicWatchdog);publicWatchdog=setInterval(()=>{if(!run)return;if(!pub||pub.readyState!==WebSocket.OPEN){schedulePublicReconnect('socket non ouvert');return}const now=Math.floor(Date.now()/1000),fresh=[...ctx.values()].filter(c=>c.lastTickEpoch>0&&now-c.lastTickEpoch<=90);if(fresh.length===0&&[...ctx.values()].some(c=>c.symbol)){log('PUBLIC: aucun tick frais depuis 90s · resynchronisation demandée.');try{pub.close(4001,'watchdog')}catch{}return}updateConnectionStatus()},10000)}
+function startPublicRefresh(){if(publicRefresh)clearInterval(publicRefresh);publicRefresh=setInterval(()=>{if(!run||!pub||pub.readyState!==WebSocket.OPEN)return;send({active_symbols:'brief'});},300000)}
+function resetTargetRuntime(){for(const c of ctx.values()){c.symbol=null;c.marketOpen=null;c.suspended=false;c.contractsOk=false;c.status='WAIT';c.lastTickEpoch=0;c.bars=[];c.contextBars=[];c.price=null;c.analysis=null;c.backtest={n:0,w:0,wr:null};}}
+function handleActiveSymbols(list){
+ universeCycle++;window.__lastActiveSymbols=list;
+ const candidates=list.filter(isSyntheticIndexCandidate),full=buildFullCandidatePool(list);
+ contractQueue=[];contractReq.clear();historyReq.clear();window.__selectedKeys=new Set();
+ ctx=new Map(full.map(t=>[t.key,{...t,bars:[],contextBars:[],price:null,analysis:null,backtest:{n:0,w:0,wr:null},status:'WAIT',marketOpen:null,suspended:false,lastTickEpoch:0,contractsOk:false,contractsChecked:false,loadedM1:false}]));
+ for(const c of ctx.values()){const hit=list.find(s=>s.underlying_symbol===c.symbol);if(hit){c.marketOpen=hit.exchange_is_open===1;c.suspended=hit.is_trading_suspended===1;c.status=c.marketOpen?(c.suspended?'SUSPENDU':'OPEN'):'FERMÉ';}}
+ const openCount=full.filter(t=>{const c=ctx.get(t.key);return c.marketOpen===true&&!c.suspended}).length;window.__familyStats=getFamilyStats(list,[]);$('nAssets').textContent=full.length;
+ log(`PUBLIC: ${list.length} symboles actifs · ${candidates.length} Synthetic/Derived candidats · ${full.length} audités · ${openCount} ouverts.`);
+ log('PUBLIC: V15 — audit exhaustif par famille; contracts_for sur tout l’univers candidat; sélection finale seulement après validation CALL + PUT.');
+ enqueueTargetBatches(full);render();updateConnectionStatus();
+}
+function openPublicSocket(isReconnect=false){if(publicConnecting||publicManualClose||!run)return;publicConnecting=true;clearPublicTimers();try{pub=new WebSocket(PUBLIC_WS);const ws=pub;ws.onopen=()=>{if(ws!==pub)return;publicConnecting=false;publicReconnectAttempt=0;publicLastPong=Date.now();$('dot').className='dot ok';$('connection').textContent='FLUX CONNECTÉ · découverte des marchés';log(isReconnect?'PUBLIC: flux rétabli · nouvelle découverte des marchés.':'PUBLIC: connexion WebSocket établie.');startPublicHeartbeat();startPublicWatchdog();startPublicRefresh();send({active_symbols:'brief'});};ws.onmessage=e=>{if(ws!==pub)return;let d;try{d=JSON.parse(e.data)}catch{return}if(d.msg_type==='ping')publicLastPong=Date.now();if(d.msg_type==='active_symbols'){handleActiveSymbols(d.active_symbols||[]);return}if(d.msg_type==='contracts_for'){const ck=contractReq.get(Number(d.req_id));if(ck){const cc=ctx.get(ck);if(!cc){contractReq.delete(Number(d.req_id));return}const avail=d.contracts_for?.available||[];const callput=avail.filter(x=>!x.contract_category||x.contract_category==='callput');const hasCall=callput.some(x=>x.contract_type==='CALL'),hasPut=callput.some(x=>x.contract_type==='PUT');cc.contractsOk=hasCall&&hasPut;cc.contractsChecked=true;cc.status=cc.contractsOk?(cc.marketOpen===true?(cc.suspended?'SUSPENDU':'READY'):'FERMÉ'):'NO_CALLPUT';contractReq.delete(Number(d.req_id));const selected=selectCompatibleUniverse();window.__selectedKeys=new Set(selected.map(x=>x.key));for(const x of ctx.values()){if(x.contractsOk===true&&window.__selectedKeys.has(x.key)&&!x.loadedM1){loadTargetData(x);x.loadedM1=true;}}window.__familyStats=getFamilyStats(window.__lastActiveSymbols||[],selected);render();}return}if(d.msg_type==='history'||d.msg_type==='candles'){processHistory(d);return}if(d.msg_type==='tick'){onTick(d.tick);return}if(d.msg_type==='error'){log('PUBLIC API: '+(d.error?.message||'erreur'));return}};ws.onerror=()=>{if(ws!==pub)return;log('PUBLIC: erreur WebSocket · attente fermeture/reconnexion.');};ws.onclose=ev=>{if(ws!==pub)return;publicConnecting=false;clearPublicTimers();$('dot').className='dot';$('connection').textContent='FLUX DÉCONNECTÉ';log(`PUBLIC: WebSocket fermée · code=${ev.code||'—'} · raison=${ev.reason||'(aucune)'} · propre=${ev.wasClean?'oui':'non'}`);if(run&&!publicManualClose)schedulePublicReconnect(ev.reason||`code ${ev.code||'—'}`)};}catch(e){publicConnecting=false;log('PUBLIC: '+e.message);schedulePublicReconnect(e.message)}}
+async function discover(){return new Promise((resolve,reject)=>{const startedAt=Date.now();const oldRun=run;publicManualClose=false;publicReconnectAttempt=0;clearPublicTimers();contractQueue=[];contractReq.clear();historyReq.clear();if(pub&&pub.readyState!==WebSocket.CLOSED){try{pub.close(1000,'redémarrage discovery')}catch{}}resetTargetRuntime();const finish=()=>resolve(true);openPublicSocket(false);const wait=()=>{if(!oldRun||!run){reject(new Error('Scanner arrêté'));return}if([...ctx.values()].some(c=>c.symbol)||Date.now()-startedAt>12000){finish();return}setTimeout(wait,250)};wait()})}
+function updateConnectionStatus(force){if(force){$('dot').className='dot';$('connection').textContent=force;return}if(!pub||pub.readyState!==WebSocket.OPEN){$('dot').className='dot';$('connection').textContent='FLUX DÉCONNECTÉ';return}let open=[...ctx.values()].some(c=>c.marketOpen===true&&!c.suspended);let known=[...ctx.values()].some(c=>c.marketOpen!==null);$('dot').className='dot ok';$('connection').textContent=open?'FLUX CONNECTÉ · MARCHÉ OUVERT':(known?'FLUX CONNECTÉ · MARCHÉS FERMÉS':'FLUX CONNECTÉ · HORAIRES À VÉRIFIER');}
+
+function processHistory(d){let key=historyReq.get(Number(d.req_id));let sym=d.echo_req?.ticks_history||d.echo_req?.symbol||null;let c=key?ctx.get(key):[...ctx.values()].find(x=>x.symbol===sym);if(!c)return;if(d.error){log(`HIST ${c.name}: ${d.error.message||'erreur'}`);historyReq.delete(Number(d.req_id));return}let got=candlesFromResponse(d);c.bars=got.slice(-HISTORY_BARS_5);c.price=c.bars.at(-1)?.c??null;backtest(c);c.analysis=analyze(c);render();log(`${c.name}: ${getClosedBars(c).length} bougies M1 clôturées · backtest ${c.backtest.n} · WR ${c.backtest.wr==null?'—':c.backtest.wr.toFixed(1)+'%'} · expiration 5 min`);historyReq.delete(Number(d.req_id));}
+
+function onTick(t){let c=[...ctx.values()].find(x=>x.symbol===t.symbol);if(!c)return;c.price=Number(t.quote);c.lastTickEpoch=Number(t.epoch)||Math.floor(Date.now()/1000);c.marketOpen=true;c.status='OPEN';let g=c.granularity,sec=Math.floor(c.lastTickEpoch/g)*g,b=c.bars.at(-1);if(!b||b.t!==sec){if(b&&b.t<sec){c.analysis=analyze(c);maybeAuto(c);}c.bars.push({t:sec,o:c.price,h:c.price,l:c.price,c:c.price});let max=HISTORY_BARS_5;if(c.bars.length>max)c.bars.shift();}else{b.c=c.price;b.h=Math.max(b.h,c.price);b.l=Math.min(b.l,c.price)}c.analysis=analyze(c);updateConnectionStatus();render();}
+
+function maybeAuto(c){if(!auto||!connected||autoStopped||openContract)return;if(window.__selectedKeys&&!window.__selectedKeys.has(c.key))return;if(!run||!pub||pub.readyState!==WebSocket.OPEN)return;if(c.marketOpen!==true||c.suspended||c.contractsOk!==true)return;let age=Math.floor(Date.now()/1000)-(c.lastTickEpoch||0);if(age>90)return;let a=c.analysis,scoreMin=AUTO_SCORE_5,minTrades=MIN_BT_TRADES_5;if(!a||a.dir==='NONE'||a.score<scoreMin)return;let histOk=c.backtest.n>=minTrades&&c.backtest.wr>=MIN_BT_WR;if(!histOk){if(Date.now()-lastAutoWaitLog>30000){lastAutoWaitLog=Date.now();log(`AUTO en attente — ${c.name}: historique ${c.backtest.n}/${minTrades}, WR ${c.backtest.wr==null?'—':c.backtest.wr.toFixed(1)+'%'} (minimum ${MIN_BT_WR}%).`);}return;}let candidates=[...ctx.values()].filter(x=>x.marketOpen===true&&!x.suspended&&x.contractsOk===true&&x.lastTickEpoch>0&&(Math.floor(Date.now()/1000)-x.lastTickEpoch)<=90&&x.analysis?.dir!=='NONE'&&x.analysis?.score>=AUTO_SCORE_5&&x.backtest.n>=MIN_BT_TRADES_5&&x.backtest.wr>=MIN_BT_WR).sort((x,y)=>{const q=(z)=>z.analysis.score+(z.backtest.wr-50)*0.35;return q(y)-q(x)});if(candidates[0]!==c)return;execute(c,a);}
+
+function selectAccount(accounts){let wanted=mode==='demo'?'demo':'real';let found=accounts.find(a=>(a.account_type||a.type)===wanted&&a.status==='active')||accounts.find(a=>(a.account_type||a.type)===wanted);return found||null;}
+function authHeaders(){const h={'Authorization':'Bearer '+authToken};if(authAppId)h['Deriv-App-ID']=authAppId;return h}
+function stopAuthHeartbeat(){if(authHeartbeat){clearInterval(authHeartbeat);authHeartbeat=null}}
+function startAuthHeartbeat(){stopAuthHeartbeat();authHeartbeat=setInterval(()=>{if(connected&&authWs?.readyState===WebSocket.OPEN)sendAuth({ping:1})},30000)}
+function clearAuthReconnect(){if(authReconnectTimer){clearTimeout(authReconnectTimer);authReconnectTimer=null}}
+function scheduleAuthReconnect(reason='connexion perdue'){if(authManualClose||!authToken||!account)return;clearAuthReconnect();authReconnectAttempt++;const delay=Math.min(30000,Math.max(1000,1000*Math.pow(2,authReconnectAttempt-1)));$('accountState').textContent=`Reconnexion automatique dans ${Math.ceil(delay/1000)}s…`;log(`AUTH: connexion perdue (${reason}). Reconnexion automatique #${authReconnectAttempt} dans ${Math.ceil(delay/1000)}s.`);authReconnectTimer=setTimeout(()=>{authReconnectTimer=null;connectAuthenticatedWs(true)},delay)}
+async function connectAuthenticatedWs(isReconnect=false){if(authConnecting||authManualClose||!account||!authToken)return;authConnecting=true;try{clearAuthReconnect();$('accountState').textContent=isReconnect?'AUTHENTIFICATION…':'CONNEXION…';const res=await fetch(API_BASE+'/trading/v1/options/accounts/'+encodeURIComponent(account.account_id)+'/otp',{method:'POST',headers:authHeaders()});const body=await res.json();const url=body?.data?.url;if(!res.ok||!url)throw new Error(body?.errors?.[0]?.message||body?.error?.message||`OTP refusé (HTTP ${res.status})`);const expected=mode==='demo'?'/ws/demo':'/ws/real';if(!url.includes(expected))throw new Error(`Environnement WebSocket inattendu: ${url}`);if(authWs&&authWs.readyState===WebSocket.OPEN){const oldWs=authWs;oldWs.onclose=null;oldWs.onerror=null;oldWs.onmessage=null;try{oldWs.close(1000,'remplacement session')}catch{}}authWs=new WebSocket(url);authWs.onopen=()=>{authConnecting=false;connected=true;authReconnectAttempt=0;clearAuthReconnect();$('accountState').textContent=`Compte ${mode.toUpperCase()} connecté · prêt`;$('autoToggle').disabled=false;$('autoToggle').textContent=auto?(mode==='real'?'⏸ Désactiver AUTO-RÉEL':'⏸ Désactiver AUTO-DÉMO'):(mode==='real'?'🔴 ACTIVER AUTO-RÉEL':'🟢 ACTIVER AUTO-DÉMO');log(`Compte ${account.account_id} connecté en mode ${mode.toUpperCase()} · session authentifiée OK.`);sendAuth({balance:1,subscribe:1});startAuthHeartbeat();if(auto&&!autoStopped)setTimeout(()=>{for(const c of ctx.values())maybeAuto(c)},500)};authWs.onmessage=e=>{try{handleAuth(JSON.parse(e.data))}catch(err){log('AUTH: message invalide reçu.')}};authWs.onclose=ev=>{const intentional=authManualClose;authConnecting=false;connected=false;stopAuthHeartbeat();$('autoToggle').disabled=true;$('autoToggle').textContent=auto&&!intentional?'⏳ Reconnexion…':'🔒 Compte déconnecté';$('accountState').textContent=intentional?'Compte déconnecté':'Connexion compte interrompue';log(`AUTH: WebSocket fermée · code=${ev.code||'—'} · raison=${ev.reason||'(aucune)'} · propre=${ev.wasClean?'oui':'non'}`);render();if(!intentional)scheduleAuthReconnect(ev.reason||`code ${ev.code||'—'}`)};authWs.onerror=()=>{log('AUTH: erreur WebSocket compte · attente de fermeture/reconnexion automatique.')}}catch(e){authConnecting=false;connected=false;stopAuthHeartbeat();log('AUTH: '+e.message);if(isReconnect)scheduleAuthReconnect(e.message);else{alert(e.message);$('accountState').textContent='Échec connexion compte'}}}
+function openAuthWs(url){if(!url)throw new Error('URL WebSocket authentifiée absente');return connectAuthenticatedWs(false)}
+async function connectAccount(){const token=$('pat').value.trim(),app=$('appId').value.trim();if(!token){alert('Renseigne le Personal Access Token (PAT).');return}if(!app){alert('Renseigne aussi le Deriv App ID : il est requis avec un PAT.');return}try{$('connectAccount').disabled=true;authToken=token;authAppId=app;authManualClose=false;authReconnectAttempt=0;const h=authHeaders();log('AUTH: récupération automatique du compte '+mode.toUpperCase()+'…');const r=await fetch(API_BASE+'/trading/v1/options/accounts',{headers:h});const j=await r.json();if(!r.ok)throw new Error(j?.errors?.[0]?.message||j?.error?.message||`Accès aux comptes refusé (HTTP ${r.status})`);const list=Array.isArray(j.data)?j.data:[j.data].filter(Boolean);account=selectAccount(list);if(!account)throw new Error('Aucun compte '+mode.toUpperCase()+' actif trouvé.');$('selectedAccount').textContent=account.account_id;$('balance').textContent=`Solde : ${account.balance??'—'} ${account.currency||'USD'}`;$('accountState').textContent=`Compte ${mode.toUpperCase()} sélectionné · authentification…`;session.startBalance=Number(account.balance)||null;loadDailyGuard();if(session.startBalance)ensureDailyReference(session.startBalance);syncDailyStats();$('disconnectAccount').disabled=false;await connectAuthenticatedWs(false)}catch(e){log('AUTH: '+e.message);alert(e.message);authToken='';authAppId=''}finally{$('connectAccount').disabled=false}}
+function handleAuth(d){
+ if(d.msg_type==='balance'){let b=d.balance?.balance??d.balance;let n=Number(b);if(Number.isFinite(n)){
+   $('balance').textContent=`Solde : ${n.toFixed(2)} ${account?.currency||'USD'}`;
+   if(account)account.balance=n;
+   if(!session.startBalance)session.startBalance=n;
+   ensureDailyReference(n);syncDailyStats();renderAuto();
+ }if(d.balance?.currency&&account)account.currency=d.balance.currency;return;}
+ if(d.msg_type==='proposal'){let meta=pendingBuy.get(Number(d.echo_req?.req_id));if(!meta)return;if(d.proposal?.id){let price=Number(d.proposal.ask_price||meta.stake);sendAuth({buy:d.proposal.id,price,req_id:++req});pendingBuy.delete(Number(d.echo_req?.req_id));log(`AUTO: proposition ${meta.dir} ${meta.name} acceptée → BUY.`)}else{pendingBuy.delete(Number(d.echo_req?.req_id));log('AUTO: proposition sans ID');}return;}
+ if(d.msg_type==='buy'){let c=d.buy;if(c?.contract_id){openContract={id:String(c.contract_id),name:c.underlying_symbol||'',dir:c.contract_type,stake:Number(c.buy_price)||0,started:Date.now()};dailyGuard.trades++;session.trades=dailyGuard.trades;saveDailyGuard();log(`AUTO: CONTRAT OUVERT #${c.contract_id} · ${c.contract_type} · ${c.buy_price}`);sendAuth({proposal_open_contract:1,contract_id:c.contract_id,subscribe:1});renderAuto();}return;}
+ if(d.msg_type==='proposal_open_contract'){let c=d.proposal_open_contract;if(!c)return;if(c.is_sold||c.status==='sold'||c.status==='won'||c.status==='lost'||c.status==='expired'){let p=Number(c.profit);if(Number.isFinite(p)){dailyGuard.pnl+=p;if(p>0)dailyGuard.wins++;else if(p<0)dailyGuard.losses++;saveDailyGuard();syncDailyStats();}log(`AUTO: contrat ${c.contract_id} terminé · ${c.status||'closed'} · P/L ${Number.isFinite(p)?p.toFixed(2):'—'} · journée ${dailyPnlPct().toFixed(2)}%`);openContract=null;renderAuto();if(evaluateDailyGuard())return;setTimeout(()=>{for(const x of ctx.values())maybeAuto(x)},300);}}
+}
+function execute(c,a){
+ if(openContract||pendingBuy.size>0||!authWs||authWs.readyState!==WebSocket.OPEN)return;
+ if(evaluateDailyGuard())return;
+ if(!ensureDailyReference(Number(account?.balance)))return;
+ let bal=Number(account?.balance);
+ if(!Number.isFinite(bal)||bal<=0){log('AUTO: solde invalide · ordre refusé.');return;}
+ let stake=Math.round(bal*AUTO_STAKE_PCT*100)/100;
+ if(stake<=0){log('AUTO: mise calculée invalide · ordre refusé.');return;}
+ let meta={name:c.name,symbol:c.symbol,dir:a.dir,score:a.score,stake,baseBalance:bal};
+ let proposalReq=sendAuth({proposal:1,amount:stake,basis:'stake',contract_type:a.dir,currency:account?.currency||'USD',duration:5,duration_unit:'m',underlying_symbol:c.symbol,subscribe:0});
+ if(proposalReq)pendingBuy.set(proposalReq,meta);
+ log(`AUTO: ${c.name} ${a.dir} score ${a.score}/100 · mise ${stake.toFixed(2)} (${(AUTO_STAKE_PCT*100).toFixed(0)}% du solde ${bal.toFixed(2)}) · expiration 5 min.`);
+}
+function renderAuto(){
+ $('autoState').textContent=auto?'ON':'OFF';$('autoState').className='auto-state '+(auto?'auto-on':'auto-off');$('autoTitle').textContent=auto?'AUTO-TRADER ACTIF':'AUTO-TRADER ARRÊTÉ';
+ $('sessionPnl').textContent=`${dailyGuard.pnl.toFixed(2)} (${dailyPnlPct().toFixed(2)}%)`;$('tradeCount').textContent=dailyGuard.trades;$('winCount').textContent=dailyGuard.wins;$('lossCount').textContent=dailyGuard.losses;$('dailyRef').textContent=dailyGuard.startBalance?`${dailyGuard.startBalance.toFixed(2)} ${account?.currency||''}`:'—';
+}
+function stopAuto(reason='arrêt manuel'){auto=false;if(reason.includes('ARRÊT JOURNALIER')){autoStopped=true;dailyGuard.stopped=true;dailyGuard.stopReason=reason;saveDailyGuard();}$('autoToggle').textContent=connected?(mode==='real'?'🔴 ACTIVER AUTO-RÉEL':'🟢 ACTIVER AUTO-DÉMO'):'🔒 Compte déconnecté';renderAuto();log('AUTO ARRÊTÉ — '+reason);}
+$('demoMode').onclick=()=>{if(auto)return;mode='demo';$('demoMode').classList.add('active');$('realMode').classList.remove('active');$('selectedAccount').textContent='—';};$('realMode').onclick=()=>{if(auto)return;mode='real';$('realMode').classList.add('active');$('demoMode').classList.remove('active');$('selectedAccount').textContent='—';};
+$('connectAccount').onclick=connectAccount;$('disconnectAccount').onclick=()=>{authManualClose=true;clearAuthReconnect();stopAuthHeartbeat();stopAuto('déconnexion');if(authWs){try{authWs.close(1000,'déconnexion manuelle')}catch{}}authWs=null;connected=false;authConnecting=false;authToken='';authAppId='';account=null;$('disconnectAccount').disabled=true;$('autoToggle').disabled=true;$('autoToggle').textContent='🔒 Connecte le compte';$('selectedAccount').textContent='—';$('balance').textContent='Solde : —';$('accountState').textContent='Compte non connecté';render()};
+$('autoToggle').onclick=()=>{
+ if(!connected)return;
+ if(auto){stopAuto();return;}
+ if(!ensureDailyReference(Number(account?.balance))){log('AUTO BLOQUÉ: capital de référence journalier indisponible.');return;}
+ if(evaluateDailyGuard())return;
+ let eligible=[...ctx.values()].filter(c=>(!window.__selectedKeys||window.__selectedKeys.has(c.key))&&c.marketOpen===true&&!c.suspended&&c.contractsOk===true&&c.lastTickEpoch>0&&(Math.floor(Date.now()/1000)-c.lastTickEpoch)<=90&&c.analysis?.dir!=='NONE'&&c.analysis?.score>=AUTO_SCORE_5&&c.backtest.n>=MIN_BT_TRADES_5&&c.backtest.wr>=MIN_BT_WR);
+ if(mode==='real'&&!confirm(`ACTIVER AUTO-RÉEL sur ${account.account_id} ?\n\nMise fixe: 1% du solde au moment de chaque entrée.\nArrêt journalier automatique à +10% de gain réalisé OU -10% de perte réalisée par rapport au capital de référence du jour.\nMaximum: 1 contrat ouvert. Aucune martingale.\n\nConfirmez uniquement si vous acceptez le risque.`))return;
+ autoStopped=false;auto=true;renderAuto();log(`AUTO-${mode.toUpperCase()} ACTIVÉ · 1% du solde par entrée · garde-fou journalier ±10% · 1 contrat max · zéro martingale.`);
+ if(eligible.length){eligible.sort((a,b)=>b.analysis.score-a.analysis.score);maybeAuto(eligible[0]);}else log('AUTO actif : aucun setup admissible maintenant, le moteur attendra le prochain signal valide.');
+};
+$('autoStop').onclick=()=>stopAuto('STOP D’URGENCE');
+$('start').onclick=async()=>{if(run)return;run=true;publicManualClose=false;$('start').disabled=true;$('stop').disabled=false;try{await discover();log("Scanner V15 démarré : Synthetic/Derived uniquement · Crash/Boom exclus · M1 · expiration 5 min · validation CALL/PUT · AUTO 1% · garde-fou journalier ±10% · 1 contrat · zéro martingale.");}catch(e){log('SCANNER: '+e.message);run=false;$('start').disabled=false;$('stop').disabled=true;$('dot').className='dot';$('connection').textContent='ERREUR INITIALISATION'}};
+$('stop').onclick=()=>{run=false;publicManualClose=true;clearPublicTimers();publicBatchQueue=[];if(pub){try{pub.close(1000,'arrêt manuel')}catch{}}pub=null;$('stop').disabled=true;$('start').disabled=false;$('dot').className='dot';$('connection').textContent='SCANNER ARRÊTÉ';};
+$('refresh').onclick=()=>{if(pub&&pub.readyState===WebSocket.OPEN){log('PUBLIC: actualisation demandée · redécouverte dynamique puis vérification CALL/PUT.');send({active_symbols:'brief'});}else $('start').click()};
+setInterval(()=>{if(run&&pub&&pub.readyState===WebSocket.OPEN){for(const c of ctx.values())maybeAuto(c);render();}},5000);
+if(account)loadDailyGuard();render();renderAuto();
+</script>
+</body>
+</html>
